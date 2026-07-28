@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp Chat</title>
+    <link rel="stylesheet" href="css/chat.css">
+</head>
+<body>
+
+<div class="chat-container">
+
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="user-info">
+            <img src="https://i.pravatar.cc/50" alt="Profile">
+            <div>
+                <h3>John Doe</h3>
+                <span>Online</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Messages -->
+    <div class="chat-body">
+
+        <div class="message received">
+            <p>Hello 👋</p>
+            <span>10:15 AM</span>
+        </div>
+
+        <div class="message sent">
+            <p>Hi! How are you?</p>
+            <span>10:16 AM</span>
+        </div>
+
+        <div class="message received">
+            <p>I'm doing great. Working on my WhatsApp project.</p>
+            <span>10:17 AM</span>
+        </div>
+
+        <div class="message sent">
+            <p>Awesome! Keep going 🚀</p>
+            <span>10:18 AM</span>
+        </div>
+
+        <div class="message received">
+            <p>Thanks!</p>
+            <span>10:19 AM</span>
+        </div>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="chat-footer">
+        <input
+            type="text"
+            id="messageInput"
+            placeholder="Type a message..."
+        >
+        <button id="sendBtn">Send</button>
+    </div>
+
+</div>
+
+<script src="js/chat.js"></script>
+
+</body>
+</html>
