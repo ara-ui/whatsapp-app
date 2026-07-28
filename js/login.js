@@ -10,7 +10,7 @@ async function login(event){
 
     const loginData={
 
-        identifier:document.getElementById("identifier").value,
+        emailOrPhone:document.getElementById("identifier").value,
 
         password:document.getElementById("password").value
 
