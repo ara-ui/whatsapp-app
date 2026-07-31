@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Chat Room</title>
+
+    <link rel="stylesheet" href="/css/chat.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+
+<body>
+
+    <div class="chat-container">
+
+        <!-- Header -->
+
+        <div class="chat-header">
+
+            <div class="profile">
+
+                <div class="avatar">
+                    C
+                </div>
+
+                <div class="header-text">
+
+                    <h2>Community Chat</h2>
+
+                    <p>Everyone can chat here</p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- Messages -->
+
+        <div id="messages" class="messages">
+
+        </div>
+
+        <!-- Input -->
+
+        <div class="chat-input">
+
+            <input
+                type="text"
+                id="message"
+                placeholder="Type a message..."
+            >
+
+            <button onclick="sendMessage()">
+                Send
+            </button>
+
+        </div>
+
+    </div>
+
+    <script src="/js/chat.js"></script>
+
+</body>
+
+</html>

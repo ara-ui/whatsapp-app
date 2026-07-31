@@ -66,8 +66,7 @@ const createUser=async (req,res)=>{
 
         res.status(201).json({
             success:true,
-            message:"signup successful",
-            user
+            message:"signup successful"
         });
 
      });
@@ -112,33 +111,33 @@ const loginUser=async (req,res)=>{
 
         bcrypt.compare(password,user.password,(err,result)=>{
 
-        if(err){
+            if(err){
 
-            return res.status(500).json({
-                message:"Something went wrong"
+                return res.status(500).json({
+                    message:"Something went wrong"
+                });
+
+            }
+
+            if(!result){
+
+                return res.status(401).json({
+                    message:"Incorrect password"
+                });
+
+            }
+
+            const token=generateAccessToken(user.id,user.name);
+
+            res.status(200).json({
+
+                success:true,
+
+                token
+
             });
 
-        }
-
-        if(!result){
-
-            return res.status(401).json({
-                message:"Incorrect password"
-            });
-
-        }
-
-        const token=generateAccessToken(user.id,user.name);
-
-        res.status(200).json({
-
-            success:true,
-
-            token
-
-        });
-
-    });
+         });
     }catch(err){
         res.status(500).json({
             message:err.message
