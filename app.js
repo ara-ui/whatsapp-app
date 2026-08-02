@@ -6,6 +6,7 @@ const path = require("path");
 const cors=require('cors');
 const http=require('http');
 const WebSocket=require('ws');
+const {Server}=require('socket.io');
 
 
 const sequelize=require('./db');
@@ -16,6 +17,7 @@ const chatRoutes=require('./routes/chatRoutes');
 
 const app=express();
 const server=http.createServer(app);
+const io=new Server(server);
 
 app.use(express.json());
 app.use(cors());
@@ -37,29 +39,17 @@ app.get("/",(req ,res)=>{
     res.sendFile(path.join(__dirname,"public","login.html"));
 });
 
-//websocket code
+io.on("connection",(socket)=>{
+    console.log("User connected");
 
-const wss=new WebSocket.Server({server});
-let clients=[];
-wss.on("connection",(ws)=>{
-    console.log("new user connected");
+    socket.on("new-message",()=>{
+        io.emit("refresh-chat");
 
-    clients.push(ws);
-
-    ws.on("message",(message)=>{
-        console.log("Message:",message.toString());
-
-        clients.forEach((client)=>{
-            if(client.readyState===WebSocket.OPEN){
-                client.send(message.toString());
-            }
-        });
     });
-    ws.on("close",()=>{
-        console.log("user disconnected");
-        clients=clients.filter((client)=>client!==ws);
+    socket.on("disconnect",()=>{
+        console.log("User disconnected");
     });
-});
+})
 
 //database connection
 sequelize.sync().then(()=>{

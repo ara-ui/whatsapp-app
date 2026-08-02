@@ -18,7 +18,7 @@ function getUser() {
 const currentUser = getUser();
 
 // ================= WebSocket =================
-const socket = new WebSocket("ws://localhost:3000");
+const socket = io("http://localhost:3000");
 
 socket.onopen = () => {
     console.log("WebSocket Connected");
@@ -33,9 +33,9 @@ socket.onerror = (err) => {
 };
 
 // Whenever server broadcasts a message
-socket.onmessage = () => {
+socket.on("refresh-chat",()=>{
     loadMessages();
-};
+});
 
 // Load Messages
 async function loadMessages() {
@@ -137,7 +137,7 @@ async function sendMessage() {
         messageInput.value = "";
 
         // Notify all connected users
-        socket.send("new-message");
+        socket.emit("new-message");
 
     } catch (err) {
         console.log(err);
