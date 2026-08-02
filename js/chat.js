@@ -17,6 +17,26 @@ function getUser() {
 
 const currentUser = getUser();
 
+// ================= WebSocket =================
+const socket = new WebSocket("ws://localhost:3000");
+
+socket.onopen = () => {
+    console.log("WebSocket Connected");
+};
+
+socket.onclose = () => {
+    console.log("WebSocket Disconnected");
+};
+
+socket.onerror = (err) => {
+    console.log(err);
+};
+
+// Whenever server broadcasts a message
+socket.onmessage = () => {
+    loadMessages();
+};
+
 // Load Messages
 async function loadMessages() {
 
@@ -116,7 +136,8 @@ async function sendMessage() {
 
         messageInput.value = "";
 
-        loadMessages();
+        // Notify all connected users
+        socket.send("new-message");
 
     } catch (err) {
         console.log(err);
@@ -135,5 +156,3 @@ messageInput.addEventListener("keypress", function (e) {
 // Initial load
 loadMessages();
 
-// Refresh messages every second
-setInterval(loadMessages, 1000);
