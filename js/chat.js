@@ -17,25 +17,35 @@ function getUser() {
 
 const currentUser = getUser();
 
-// ================= WebSocket =================
+// Socket.io connection
 const socket = io("http://localhost:3000");
 
-socket.onopen = () => {
-    console.log("WebSocket Connected");
-};
+//connection logs
 
-socket.onclose = () => {
-    console.log("WebSocket Disconnected");
-};
+socket.on("connect", () => {
+    console.log("Socket.IO Connected");
+});
 
-socket.onerror = (err) => {
+socket.on("disconnect", () => {
+    console.log("Socket.IO Disconnected");
+});
+
+socket.on("connect_error", (err) => {
     console.log(err);
-};
+});
 
-// Whenever server broadcasts a message
+// Flow:
+// User sends message
+// -> Server saves it in DB
+// -> Server emits "refresh-chat"
+// -> All clients receive it
+// -> loadMessages() updates the chat UI
+
 socket.on("refresh-chat",()=>{
     loadMessages();
 });
+
+
 
 // Load Messages
 async function loadMessages() {

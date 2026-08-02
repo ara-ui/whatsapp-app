@@ -17,7 +17,11 @@ const chatRoutes=require('./routes/chatRoutes');
 
 const app=express();
 const server=http.createServer(app);
-const io=new Server(server);
+const io=new Server(server,{
+    cors:{
+        origin:"*"
+    }
+});
 
 app.use(express.json());
 app.use(cors());
@@ -40,7 +44,7 @@ app.get("/",(req ,res)=>{
 });
 
 io.on("connection",(socket)=>{
-    console.log("User connected");
+    console.log("User connected",socket.id);
 
     socket.on("new-message",()=>{
         io.emit("refresh-chat");
