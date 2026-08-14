@@ -5,9 +5,10 @@ const express=require('express');
 const path = require("path");
 const cors=require('cors');
 const http=require('http');
-const WebSocket=require('ws');
-const {Server}=require('socket.io');
+const { Server } = require("socket.io");
+const jwt = require("jsonwebtoken");
 
+const socketAuthentication = require("./middleware/socketAuthentication");
 
 const sequelize=require('./db');
 require('./models');
@@ -22,6 +23,9 @@ const io=new Server(server,{
         origin:"*"
     }
 });
+
+
+io.use(socketAuthentication);
 
 app.use(express.json());
 app.use(cors());
@@ -43,17 +47,34 @@ app.get("/",(req ,res)=>{
     res.sendFile(path.join(__dirname,"public","login.html"));
 });
 
-io.on("connection",(socket)=>{
-    console.log("User connected",socket.id);
 
-    socket.on("new-message",()=>{
+
+// Socket.IO Connection
+io.on("connection", (socket) => {
+
+    console.log(
+        "Authenticated user connected:",
+        socket.user.userId,
+        socket.user.name
+    );
+
+    socket.on("new-message", () => {
+
         io.emit("refresh-chat");
 
     });
-    socket.on("disconnect",()=>{
-        console.log("User disconnected");
+
+    socket.on("disconnect", () => {
+
+        console.log(
+            "User disconnected:",
+            socket.user.userId
+        );
+
     });
-})
+
+});
+
 
 //database connection
 sequelize.sync().then(()=>{

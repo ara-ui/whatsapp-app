@@ -18,7 +18,12 @@ function getUser() {
 const currentUser = getUser();
 
 // Socket.io connection
-const socket = io("http://localhost:3000");
+
+const socket = io("http://localhost:3000", {
+    auth: {
+        token: token
+    }
+});
 
 //connection logs
 
