@@ -5,10 +5,9 @@ const express=require('express');
 const path = require("path");
 const cors=require('cors');
 const http=require('http');
-const { Server } = require("socket.io");
-const jwt = require("jsonwebtoken");
 
-const socketAuthentication = require("./middleware/socketAuthentication");
+
+const initializeSocket = require("./socket-io");
 
 const sequelize=require('./db');
 require('./models');
@@ -17,15 +16,15 @@ const userRoutes=require('./routes/userRoutes');
 const chatRoutes=require('./routes/chatRoutes');
 
 const app=express();
+
+
 const server=http.createServer(app);
-const io=new Server(server,{
-    cors:{
-        origin:"*"
-    }
-});
 
 
-io.use(socketAuthentication);
+
+// Initialize Socket.IO
+initializeSocket(server);
+
 
 app.use(express.json());
 app.use(cors());
@@ -48,32 +47,6 @@ app.get("/",(req ,res)=>{
 });
 
 
-
-// Socket.IO Connection
-io.on("connection", (socket) => {
-
-    console.log(
-        "Authenticated user connected:",
-        socket.user.userId,
-        socket.user.name
-    );
-
-    socket.on("new-message", () => {
-
-        io.emit("refresh-chat");
-
-    });
-
-    socket.on("disconnect", () => {
-
-        console.log(
-            "User disconnected:",
-            socket.user.userId
-        );
-
-    });
-
-});
 
 
 //database connection
