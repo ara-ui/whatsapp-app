@@ -5,11 +5,12 @@ const { Op } = require('sequelize');
 
 
 // Generate JWT Access Token
-function generateAccessToken(id, name) {
+function generateAccessToken(id, name,email) {
     return jwt.sign(
         {
             userId: id,
-            name: name
+            name: name,
+            email:email
         },
         process.env.JWT_SECRET,
         {
@@ -155,7 +156,8 @@ const loginUser = async (req, res) => {
         // Generate JWT token
         const token = generateAccessToken(
             user.id,
-            user.name
+            user.name,
+            user.email
         );
 
 
@@ -176,10 +178,56 @@ const loginUser = async (req, res) => {
         });
     }
 };
+const checkUser = async (req, res) => {
 
+    try {
+
+        const { email } = req.query;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required"
+            });
+        }
+
+        const user = await User.findOne({
+            where: {
+                email: email
+            }
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email
+            }
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        return res.status(500).json({
+            success: false,
+            message: err.message
+        });
+
+    }
+};
 
 // Export controllers
 module.exports = {
     createUser,
-    loginUser
+    loginUser,
+    checkUser
 };

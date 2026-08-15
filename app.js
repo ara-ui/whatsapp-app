@@ -16,11 +16,7 @@ const userRoutes=require('./routes/userRoutes');
 const chatRoutes=require('./routes/chatRoutes');
 
 const app=express();
-
-
 const server=http.createServer(app);
-
-
 
 // Initialize Socket.IO
 initializeSocket(server);

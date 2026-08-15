@@ -1,3 +1,4 @@
+const BASE_URL = "http://localhost:3000";
 const token = localStorage.getItem("token");
 
 if (!token) {
@@ -35,8 +36,18 @@ function getUser() {
     );
 }
 
+//generate room id
+
+function generateRoomId(email1, email2) {
+
+    const emails = [email1, email2].sort();
+
+    return `${emails[0]}_${emails[1]}`;
+}
+
 
 const currentUser = getUser();
+
 
 
 // Current personal room
@@ -82,50 +93,61 @@ socket.on("connect_error", (err) => {
 
 
 // Join Personal Room
+joinRoomBtn.addEventListener("click", async () => {
 
-joinRoomBtn.addEventListener("click", () => {
-
-    const email =
-        userEmailInput.value.trim();
-
+    const email = userEmailInput.value.trim();
 
     if (!email) {
-
-        alert(
-            "Please enter the user's email"
-        );
-
+        alert("Please enter a user's email");
         return;
-
     }
 
+    try {
 
-    // Create room ID
+        // Step 1: Check whether the other user exists
+        const response = await axios.get(
+            `${BASE_URL}/user/check-user`,
+            {
+                params: {
+                    email: email
+                }
+            }
+        );
 
-    const roomId =
-        `${currentUser.userId}_${email}`;
+        if (!response.data.success) {
+            alert("User not found");
+            return;
+        }
 
+        // Step 2: Generate the same room ID for both users
+        const roomId = generateRoomId(
+            currentUser.email,
+            email
+        );
 
-    currentRoom = roomId;
+        // Step 3: Store current room
+        currentRoom = roomId;
 
+        // Step 4: Join the room
+        socket.emit("join_room", currentRoom);
 
-    // Tell server to join the room
+        console.log("Joined room:", currentRoom);
 
-    socket.emit(
-        "join_room",
-        currentRoom
-    );
+    } catch (err) {
 
+        console.log(err);
 
-    console.log(
-        "Joined personal room:",
-        currentRoom
-    );
+        if (err.response && err.response.status === 404) {
 
+            alert("User not found");
 
-    alert(
-        `Joined chat with ${email}`
-    );
+        } else {
+
+            alert("Something went wrong");
+
+        }
+
+    }
 
 });
 
