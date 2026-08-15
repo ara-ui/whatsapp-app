@@ -2,6 +2,8 @@ const { Server } = require("socket.io");
 
 const socketAuthentication = require("./middleware");
 const chatHandler = require("./handlers/chat");
+const personalChatHandler=require("./handlers/personalChat");
+
 
 
 const initializeSocket = (server) => {
@@ -30,6 +32,9 @@ const initializeSocket = (server) => {
         // Register chat events
         chatHandler(io, socket);
 
+        // Personal chat
+        personalChatHandler(io, socket);
+        
     });
 
 
