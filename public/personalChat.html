@@ -7,11 +7,9 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Chat Room</title>
+    <title>Personal Chat</title>
 
-    <link rel="stylesheet" href="/css/chat.css">
-
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="/css/personalChat.css">
 
 </head>
 
@@ -26,14 +24,16 @@
             <div class="profile">
 
                 <div class="avatar">
-                    C
+                    P
                 </div>
 
                 <div class="header-text">
 
-                    <h2>Community Chat</h2>
+                    <h2 id="chatTitle">Personal Chat</h2>
 
-                    <p>Everyone can chat here</p>
+                    <p id="chatStatus">
+                        Start a conversation
+                    </p>
 
                 </div>
 
@@ -42,13 +42,30 @@
         </div>
 
 
-        <!-- Messages -->
+        <!-- Search User -->
 
-        <div id="messages" class="messages">
+        <div class="personal-chat">
+
+            <input
+                type="email"
+                id="userEmail"
+                placeholder="Enter user's email"
+            >
+
+            <button id="joinRoomBtn">
+                Start Chat
+            </button>
 
         </div>
 
-        <!-- Input -->
+
+        <!-- Messages -->
+
+        <div id="messages" class="messages">
+        </div>
+
+
+        <!-- Message Input -->
 
         <div class="chat-input">
 
@@ -58,15 +75,18 @@
                 placeholder="Type a message..."
             >
 
-            <button onclick="sendMessage()">
+            <button id="sendBtn">
                 Send
             </button>
 
         </div>
 
     </div>
+
+
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/chat.js"></script>
+
+    <script src="/js/personalChat.js"></script>
 
 </body>
 

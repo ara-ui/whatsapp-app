@@ -17,6 +17,7 @@ function getUser() {
 
 const currentUser = getUser();
 
+
 // Socket.io connection
 
 const socket = io("http://localhost:3000", {
@@ -24,6 +25,7 @@ const socket = io("http://localhost:3000", {
         token: token
     }
 });
+
 
 //connection logs
 
@@ -39,20 +41,14 @@ socket.on("connect_error", (err) => {
     console.log(err);
 });
 
-// Flow:
-// User sends message
-// -> Server saves it in DB
-// -> Server emits "refresh-chat"
-// -> All clients receive it
-// -> loadMessages() updates the chat UI
 
+// When another user sends a community message
 socket.on("refresh-chat",()=>{
     loadMessages();
 });
 
 
-
-// Load Messages
+// Load community Messages
 async function loadMessages() {
 
     try {
@@ -128,13 +124,16 @@ async function loadMessages() {
     }
 }
 
-// Send Message
+// Send community Message
 async function sendMessage() {
 
     const message = messageInput.value.trim();
 
     if (message === "") return;
 
+
+
+    // COMMUNITY CHAT
     try {
 
         await axios.post(
@@ -151,15 +150,18 @@ async function sendMessage() {
 
         messageInput.value = "";
 
-        // Notify all connected users
+        // Notify connected users
+
         socket.emit("new-message");
 
     } catch (err) {
+
         console.log(err);
+
     }
 }
 
-// Enter key support
+//enter key support
 messageInput.addEventListener("keypress", function (e) {
 
     if (e.key === "Enter") {
@@ -167,7 +169,5 @@ messageInput.addEventListener("keypress", function (e) {
     }
 
 });
-
 // Initial load
 loadMessages();
-

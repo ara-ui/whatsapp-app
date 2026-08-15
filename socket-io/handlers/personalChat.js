@@ -16,7 +16,8 @@ const personalChatHandler = (io, socket) => {
         const { room, message } = data;
 
         io.to(room).emit("new_message", {
-            message,
+            room: room,
+            message: message,
             senderId: socket.user.userId,
             senderName: socket.user.name
         });
