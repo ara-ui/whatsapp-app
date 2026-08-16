@@ -37,7 +37,7 @@ async function login(event){
 
         );
 
-        window.location.href="chat.html";
+        window.location.href="home.html";
 
     }
 

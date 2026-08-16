@@ -14,6 +14,8 @@ require('./models');
 
 const userRoutes=require('./routes/userRoutes');
 const chatRoutes=require('./routes/chatRoutes');
+const roomRoutes = require("./routes/roomRoutes");
+const messageRoutes = require("./routes/messageRoutes");
 
 const app=express();
 const server=http.createServer(app);
@@ -36,6 +38,9 @@ app.use("/js", express.static(path.join(__dirname, "js")));
 //routes
 app.use("/user",userRoutes);
 app.use("/chat",chatRoutes);
+app.use("/rooms", roomRoutes);
+app.use("/rooms", messageRoutes);
+
 
 //home page
 app.get("/",(req ,res)=>{
