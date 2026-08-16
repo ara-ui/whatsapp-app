@@ -14,14 +14,20 @@ require('./models');
 
 const userRoutes=require('./routes/userRoutes');
 const chatRoutes=require('./routes/chatRoutes');
-const roomRoutes = require("./routes/roomRoutes");
-const messageRoutes = require("./routes/messageRoutes");
+const roomRoutes=require('./routes/roomRoutes');
+const messageRoutes=require('./routes/messageRoutes');
+const mediaRoutes=require('./routes/mediaRoutes');
 
 const app=express();
 const server=http.createServer(app);
 
 // Initialize Socket.IO
-initializeSocket(server);
+const io = initializeSocket(server);
+
+// Makes io reachable from REST controllers via req.app.get("io") —
+// needed so POST /media/upload can broadcast into a room the same
+// way the Socket.IO room handler does for text messages.
+app.set("io", io);
 
 
 app.use(express.json());
@@ -38,9 +44,9 @@ app.use("/js", express.static(path.join(__dirname, "js")));
 //routes
 app.use("/user",userRoutes);
 app.use("/chat",chatRoutes);
-app.use("/rooms", roomRoutes);
-app.use("/rooms", messageRoutes);
-
+app.use("/rooms",roomRoutes);
+app.use("/rooms",messageRoutes);
+app.use("/media",mediaRoutes);
 
 //home page
 app.get("/",(req ,res)=>{

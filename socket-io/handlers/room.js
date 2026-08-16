@@ -7,7 +7,7 @@ const { isAuthorizedForRoom } = require("../../utils/roomAuthorization");
 
 const roomHandler = (io, socket) => {
 
-
+    
     socket.on("room:join", async (rawRoomId) => {
         try {
             const roomId = parseInt(rawRoomId, 10);
@@ -40,8 +40,8 @@ const roomHandler = (io, socket) => {
             socket.emit("room:error", { message: "Failed to join room" });
         }
     });
-    
-    
+
+
     socket.on("room:send", async (payload) => {
         try {
             const { content } = payload || {};
@@ -86,7 +86,11 @@ const roomHandler = (io, socket) => {
                 roomId: room.id,
                 senderId: message.senderId,
                 senderName: sender ? sender.name : socket.user.name,
+                messageType: message.messageType,
                 content: message.content,
+                mediaUrl: message.mediaUrl,
+                fileName: message.fileName,
+                mimeType: message.mimeType,
                 createdAt: message.createdAt
             });
 

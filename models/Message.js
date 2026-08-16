@@ -1,8 +1,7 @@
 const { DataTypes } = require('sequelize');
 const db = require('../db');
 
-// One unified message table for personal, group, AND community messages.
-// Every message belongs to exactly one Room (via roomId) and one sender.
+
 const Message = db.define("Message", {
     id: {
         type: DataTypes.INTEGER,
@@ -19,8 +18,25 @@ const Message = db.define("Message", {
     },
     content: {
         type: DataTypes.STRING(2000),
-        allowNull: false
+        // Nullable: media messages carry no text content.
+        allowNull: true
+    },
+    messageType: {
+        type: DataTypes.ENUM("text", "image", "video", "file"),
+        allowNull: false,
+        defaultValue: "text"
+    },
+    mediaUrl: {
+        type: DataTypes.STRING(1000),
+        allowNull: true
+    },
+    fileName: {
+        type: DataTypes.STRING(255),
+        allowNull: true
+    },
+    mimeType: {
+        type: DataTypes.STRING(255),
+        allowNull: true
     }
 });
-
 module.exports = Message;

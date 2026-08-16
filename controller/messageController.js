@@ -5,6 +5,19 @@ const User = require("../models/User");
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
 
 
+// =========================================================
+// GET /rooms/:roomId/messages
+//
+// Returns persisted message history for a room, oldest first.
+// Read-only: sending happens over Socket.IO (see
+// socket-io/handlers/room.js) so there is exactly one code
+// path that writes a Message row, avoiding duplicate-write /
+// duplicate-broadcast bugs.
+//
+// Authorization is re-checked here independently of the socket
+// layer — a user should never be able to read history for a
+// room they don't belong to just by knowing its numeric id.
+// =========================================================
 exports.getRoomMessages = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -50,7 +63,11 @@ exports.getRoomMessages = async (req, res) => {
             roomId: m.roomId,
             senderId: m.senderId,
             senderName: m.Sender ? m.Sender.name : null,
+            messageType: m.messageType,
             content: m.content,
+            mediaUrl: m.mediaUrl,
+            fileName: m.fileName,
+            mimeType: m.mimeType,
             createdAt: m.createdAt
         }));
 
