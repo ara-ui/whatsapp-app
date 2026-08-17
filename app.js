@@ -11,6 +11,8 @@ const initializeSocket = require("./socket-io");
 
 const sequelize=require('./db');
 require('./models');
+require("./jobs/archiveMessage");
+
 
 const userRoutes=require('./routes/userRoutes');
 const chatRoutes=require('./routes/chatRoutes');
@@ -24,9 +26,6 @@ const server=http.createServer(app);
 // Initialize Socket.IO
 const io = initializeSocket(server);
 
-// Makes io reachable from REST controllers via req.app.get("io") —
-// needed so POST /media/upload can broadcast into a room the same
-// way the Socket.IO room handler does for text messages.
 app.set("io", io);
 
 
