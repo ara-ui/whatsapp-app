@@ -15,7 +15,6 @@ require("./jobs/archiveMessage");
 
 
 const userRoutes=require('./routes/userRoutes');
-const chatRoutes=require('./routes/chatRoutes');
 const roomRoutes=require('./routes/roomRoutes');
 const messageRoutes=require('./routes/messageRoutes');
 const mediaRoutes=require('./routes/mediaRoutes');
@@ -42,7 +41,6 @@ app.use("/js", express.static(path.join(__dirname, "js")));
 
 //routes
 app.use("/user",userRoutes);
-app.use("/chat",chatRoutes);
 app.use("/rooms",roomRoutes);
 app.use("/rooms",messageRoutes);
 app.use("/media",mediaRoutes);

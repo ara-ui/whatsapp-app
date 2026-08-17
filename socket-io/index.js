@@ -1,8 +1,6 @@
 const { Server } = require("socket.io");
 
 const socketAuthentication = require("./middleware");
-const chatHandler = require("./handlers/chat");
-const personalChatHandler=require("./handlers/personalChat");
 const roomHandler = require("./handlers/room");
 
 
@@ -30,8 +28,6 @@ const initializeSocket = (server) => {
         );
 
 
-         chatHandler(io, socket);
-        personalChatHandler(io, socket);
          roomHandler(io, socket);
 
        socket.on("disconnect", (reason) => {

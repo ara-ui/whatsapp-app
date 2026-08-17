@@ -1,19 +1,10 @@
 const User = require("./User");
-const Chat = require("./Chat");
 const Room = require("./Room");
 const RoomMember = require("./RoomMember");
 const Message = require("./Message");
 
 // Associations
 
-User.hasMany(Chat, {
-    foreignKey: "userId",
-    onDelete: "CASCADE"
-});
-
-Chat.belongsTo(User, {
-    foreignKey: "userId"
-});
 
 // Room <-> RoomMember (one room has many membership rows)
 Room.hasMany(RoomMember, {
@@ -69,7 +60,6 @@ Message.belongsTo(User, {
 
 module.exports = {
     User,
-    Chat,
     Room,
     RoomMember,
     Message

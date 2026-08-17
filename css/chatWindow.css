@@ -309,3 +309,101 @@
 .attachment-file-icon {
     font-size: 60px;
 }
+
+/* =========================
+   Media Viewer
+========================= */
+
+.media-viewer {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 10000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px;
+}
+
+.media-viewer.hidden {
+    display: none;
+}
+
+.media-viewer-content {
+    max-width: 95vw;
+    max-height: 90vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.media-viewer-image {
+    max-width: 90vw;
+    max-height: 85vh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.media-viewer-video {
+    max-width: 90vw;
+    max-height: 85vh;
+    border-radius: 8px;
+}
+
+.media-viewer-close {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 50%;
+
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+
+    font-size: 22px;
+    cursor: pointer;
+
+    z-index: 10001;
+}
+
+.media-viewer-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.message-media-image {
+    cursor: pointer;
+}
+
+.message-video-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.message-video-wrapper .message-media-video {
+    display: block;
+    pointer-events: none;
+}
+
+.video-view-overlay {
+    position: absolute;
+    inset: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 40px;
+    color: white;
+
+    background: rgba(0, 0, 0, 0.15);
+
+    pointer-events: none;
+}
