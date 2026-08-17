@@ -1,6 +1,11 @@
 const crypto = require("crypto");
 const multer = require("multer");
-const { PutObjectCommand } = require("@aws-sdk/client-s3");
+const {
+    PutObjectCommand,
+    GetObjectCommand
+} = require("@aws-sdk/client-s3");
+
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const s3Client = require("../utils/s3Client");
 const Room = require("../models/Room");
@@ -33,23 +38,6 @@ const upload = multer({
 }).single("file");
 
 
-// =========================================================
-// POST /media/upload
-// multipart/form-data fields: file, roomId
-//
-// 1. Authenticate (via the existing `authenticate` middleware, same
-//    as every other route).
-// 2. Parse the multipart body (multer) — rejects bad type/size here.
-// 3. Re-verify the room exists and the user is actually a member of
-//    it, using the SAME isAuthorizedForRoom() helper the REST message
-//    history endpoint and the Socket.IO room handler both use — one
-//    authorization rule, enforced identically everywhere.
-// 4. Upload to S3. Only if that succeeds do we write to the DB —
-//    never create a Message row pointing at a file that isn't there.
-// 5. Broadcast over the existing "room:message" Socket.IO event,
-//    scoped to just this room (io.to(roomId)), so it reaches exactly
-//    the same audience a text message would and nobody else.
-// =========================================================
 exports.uploadMedia = (req, res) => {
     upload(req, res, async (uploadErr) => {
 
@@ -104,12 +92,7 @@ exports.uploadMedia = (req, res) => {
             }
 
             const messageType = getMessageTypeFromMime(file.mimetype);
-
-            // Strip anything but safe filename characters before using
-            // it in the S3 key (defense against path traversal / weird
-            // unicode in the object key), while keeping the ORIGINAL
-            // name for display/download purposes in fileName below.
-            const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+           const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
             const s3Key = `media/${roomId}/${crypto.randomUUID()}-${safeName}`;
 
             try {
@@ -127,16 +110,24 @@ exports.uploadMedia = (req, res) => {
                     message: "Failed to upload file to storage"
                 });
             }
+            // Generate temporary URL for the private S3 object
+            const mediaUrl = await getSignedUrl(
+                s3Client,
+                new GetObjectCommand({
+                    Bucket: process.env.AWS_S3_BUCKET,
+                    Key: s3Key
+                }),
+                { expiresIn: 3600 }
+            );
 
-            const mediaUrl =
-                `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${s3Key}`;
 
             const message = await Message.create({
                 roomId: room.id,
                 senderId: currentUserId,
                 content: null,
                 messageType,
-                mediaUrl,
+                mediaUrl:null,
+                mediaKey: s3Key,
                 fileName: file.originalname,
                 mimeType: file.mimetype
             });
@@ -148,17 +139,13 @@ exports.uploadMedia = (req, res) => {
                 senderName: req.user.name,
                 messageType: message.messageType,
                 content: null,
-                mediaUrl: message.mediaUrl,
+                mediaUrl,
                 fileName: message.fileName,
                 mimeType: message.mimeType,
                 createdAt: message.createdAt
             };
 
-            // Same event name/shape as text messages ("room:message"),
-            // scoped to just this room — everyone currently joined to
-            // it (including the sender, who joined on openRoom()) gets
-            // it once, in real time. No separate media event needed.
-            const io = req.app.get("io");
+             const io = req.app.get("io");
 
             if (io) {
                 io.to(String(room.id)).emit("room:message", payload);

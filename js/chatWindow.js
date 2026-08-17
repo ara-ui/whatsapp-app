@@ -1,14 +1,4 @@
-// ============================================================
-// chatWindow.js
-// ONE reusable conversation view used for personal, group, AND
-// community chats alike — there is no separate "personal" or
-// "group" chat window, just this one driven by whichever room
-// object openRoom() was called with.
-//
-// Depends on globals from socketClient.js (BASE_URL, token,
-// currentUser, socket) and helpers from home.js (roomIcon,
-// escapeHtml).
-// ============================================================
+
 
 const chatWindowPanel = document.getElementById("chatWindowPanel");
 const chatWindowEmptyState = document.getElementById("chatWindowEmptyState");
@@ -28,12 +18,62 @@ const mediaFileInput = document.getElementById("mediaFileInput");
 
 let currentRoom = null;
 
+let pendingFile = null;
+let pendingPreviewUrl = null;
+const renderedMessageIds = new Set();
 
-// ---------------------------------------------------------
-// Opening a conversation
-// ---------------------------------------------------------
+const attachmentPreview = document.createElement("div");
+
+attachmentPreview.id = "attachmentPreview";
+attachmentPreview.className = "attachment-preview hidden";
+
+attachmentPreview.innerHTML = `
+    <div class="attachment-preview-content">
+        <div id="attachmentPreviewBody"></div>
+
+        <div class="attachment-preview-info">
+            <span id="attachmentPreviewName"></span>
+
+            <div class="attachment-preview-actions">
+                <button type="button" id="cancelAttachmentBtn">
+                    Cancel
+                </button>
+
+                <button type="button" id="sendAttachmentBtn">
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+`;
+
+const previewBody = attachmentPreview.querySelector("#attachmentPreviewBody");
+const previewName = attachmentPreview.querySelector("#attachmentPreviewName");
+const cancelAttachmentBtn =
+    attachmentPreview.querySelector("#cancelAttachmentBtn");
+const sendAttachmentBtn =
+    attachmentPreview.querySelector("#sendAttachmentBtn");
+
+document.body.appendChild(attachmentPreview);
+
+function clearPendingAttachment() {
+    pendingFile = null;
+
+    if (pendingPreviewUrl) {
+        URL.revokeObjectURL(pendingPreviewUrl);
+        pendingPreviewUrl = null;
+    }
+
+    previewBody.innerHTML = "";
+    previewName.textContent = "";
+    mediaFileInput.value = "";
+
+    attachmentPreview.classList.add("hidden");
+}
 
 async function openRoom(room) {
+
+    clearPendingAttachment();
     currentRoom = room;
 
     chatWindowEmptyState.classList.add("hidden");
@@ -50,9 +90,7 @@ async function openRoom(room) {
 
     messagesContainer.innerHTML = `<div class="empty-state">Loading messages…</div>`;
 
-    // Ask the server to authorize + join this room's socket channel.
-    // The server independently re-verifies membership — this call
-    // can silently fail (via a "room:error" event) if it doesn't.
+    
     socket.emit("room:join", room.id);
 
     await loadMessageHistory(room.id);
@@ -74,15 +112,13 @@ async function loadMessageHistory(roomId) {
 }
 
 
-// ---------------------------------------------------------
-// Rendering messages
-// ---------------------------------------------------------
-
 function renderMessages(messages) {
     messagesContainer.innerHTML = "";
+    renderedMessageIds.clear();
 
     if (messages.length === 0) {
-        messagesContainer.innerHTML = `<div class="empty-state">No messages yet. Say hello!</div>`;
+        messagesContainer.innerHTML =
+            `<div class="empty-state">No messages yet. Say hello!</div>`;
         return;
     }
 
@@ -90,7 +126,20 @@ function renderMessages(messages) {
     scrollToBottom();
 }
 
+
 function appendMessage(msg) {
+    if (!msg || !msg.id) {
+        return;
+    }
+
+    const messageId = String(msg.id);
+
+    if (renderedMessageIds.has(messageId)) {
+        return;
+    }
+
+    renderedMessageIds.add(messageId);
+
     const div = document.createElement("div");
 
     const time = new Date(msg.createdAt).toLocaleTimeString([], {
@@ -115,10 +164,7 @@ function appendMessage(msg) {
     messagesContainer.appendChild(div);
 }
 
-// Renders the content portion of a message differently depending on
-// messageType. "text" (or missing/unknown types, e.g. very old rows)
-// falls back to the original plain-text rendering so nothing existing
-// breaks.
+
 function renderMessageBody(msg) {
     if (msg.messageType === "image") {
         return `<img class="message-media-image" src="${escapeHtml(msg.mediaUrl)}" alt="${escapeHtml(msg.fileName || "image")}">`;
@@ -148,9 +194,6 @@ function scrollToBottom() {
 }
 
 
-// ---------------------------------------------------------
-// Sending messages
-// ---------------------------------------------------------
 
 function sendCurrentMessage() {
     const content = messageInput.value.trim();
@@ -162,11 +205,7 @@ function sendCurrentMessage() {
         return;
     }
 
-    // We do NOT optimistically render this locally. We wait for the
-    // server's "room:message" broadcast (which includes us, since we
-    // joined the room) so sender and receivers always render an
-    // identical, server-confirmed message — no local/duplicate drift.
-    socket.emit("room:send", {
+        socket.emit("room:send", {
         roomId: currentRoom.id,
         content: content
     });
@@ -187,9 +226,6 @@ backBtn.addEventListener("click", () => {
 });
 
 
-// ---------------------------------------------------------
-// Sending media (images / videos / files)
-// ---------------------------------------------------------
 
 attachBtn.addEventListener("click", () => {
     if (!currentRoom) {
@@ -200,64 +236,138 @@ attachBtn.addEventListener("click", () => {
     mediaFileInput.click();
 });
 
-mediaFileInput.addEventListener("change", async () => {
+mediaFileInput.addEventListener("change", () => {
     const file = mediaFileInput.files[0];
-
-    // Always clear the input so selecting the SAME file again still
-    // fires a "change" event next time.
-    mediaFileInput.value = "";
 
     if (!file || !currentRoom) {
         return;
     }
 
+    pendingFile = file;
+
+    if (pendingPreviewUrl) {
+        URL.revokeObjectURL(pendingPreviewUrl);
+        pendingPreviewUrl = null;
+    }
+
+    previewBody.innerHTML = "";
+    previewName.textContent = file.name;
+
+    if (file.type.startsWith("image/")) {
+        pendingPreviewUrl = URL.createObjectURL(file);
+
+        const img = document.createElement("img");
+        img.src = pendingPreviewUrl;
+        img.alt = file.name;
+
+        previewBody.appendChild(img);
+    }
+
+    else if (file.type.startsWith("video/")) {
+        pendingPreviewUrl = URL.createObjectURL(file);
+
+        const video = document.createElement("video");
+        video.src = pendingPreviewUrl;
+        video.controls = true;
+
+        previewBody.appendChild(video);
+    }
+
+    else {
+        previewBody.innerHTML = `
+            <div class="attachment-file-icon">📄</div>
+        `;
+    }
+
+    attachmentPreview.classList.remove("hidden");
+});
+
+cancelAttachmentBtn.addEventListener("click", () => {
+    clearPendingAttachment();
+});
+
+async function uploadSelectedFile() {
+    if (!pendingFile || !currentRoom) {
+        return;
+    }
+    if (sendAttachmentBtn.disabled) {
+    return;
+    }
+
+    const file = pendingFile;
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("roomId", currentRoom.id);
 
-    attachBtn.disabled = true;
-    attachBtn.textContent = "⏳";
+    sendAttachmentBtn.disabled = true;
+    cancelAttachmentBtn.disabled = true;
+
+    sendAttachmentBtn.textContent = "Uploading...";
 
     try {
-        // We do NOT render anything from this response. Just like
-        // sendCurrentMessage(), we wait for the server's "room:message"
-        // broadcast (which reaches us too, since we're joined to this
-        // room) so every client — including the uploader — renders an
-        // identical, server-confirmed message with no duplication.
-        await axios.post(
+        const response = await axios.post(
             `${BASE_URL}/media/upload`,
             formData,
-            { headers: { Authorization: token } }
+            {
+                headers: {
+                    Authorization: token
+                }
+            }
         );
+
+        const uploadedMessage = response.data.message;
+
+        if (uploadedMessage) {
+            appendMessage(uploadedMessage);
+            scrollToBottom();
+        }
+        
+        clearPendingAttachment();
+
 
     } catch (err) {
         console.log(err);
 
-        if (err.response && err.response.data && err.response.data.message) {
+        if (
+            err.response &&
+            err.response.data &&
+            err.response.data.message
+        ) {
             alert(err.response.data.message);
         } else {
             alert("Failed to upload file");
         }
 
     } finally {
-        attachBtn.disabled = false;
-        attachBtn.textContent = "📎";
+        sendAttachmentBtn.disabled = false;
+        cancelAttachmentBtn.disabled = false;
+        sendAttachmentBtn.textContent = "Send";
     }
+}
+
+// ADD THIS
+sendAttachmentBtn.addEventListener("click", async () => {
+    await uploadSelectedFile();
 });
-
-
-// ---------------------------------------------------------
-// Real-time incoming messages
-// ---------------------------------------------------------
 
 socket.on("room:message", (msg) => {
     if (!currentRoom || msg.roomId !== currentRoom.id) {
         return;
     }
 
-    const emptyEl = messagesContainer.querySelector(".empty-state");
-    if (emptyEl) emptyEl.remove();
+    const beforeCount = renderedMessageIds.size;
 
     appendMessage(msg);
+
+    if (renderedMessageIds.size === beforeCount) {
+        return;
+    }
+
+    const emptyEl = messagesContainer.querySelector(".empty-state");
+    if (emptyEl) {
+        emptyEl.remove();
+    }
+
     scrollToBottom();
 });

@@ -2,22 +2,13 @@ const Room = require("../models/Room");
 const Message = require("../models/Message");
 const User = require("../models/User");
 
+const { GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
+const s3Client = require("../utils/s3Client");
+
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
 
-
-// =========================================================
-// GET /rooms/:roomId/messages
-//
-// Returns persisted message history for a room, oldest first.
-// Read-only: sending happens over Socket.IO (see
-// socket-io/handlers/room.js) so there is exactly one code
-// path that writes a Message row, avoiding duplicate-write /
-// duplicate-broadcast bugs.
-//
-// Authorization is re-checked here independently of the socket
-// layer — a user should never be able to read history for a
-// room they don't belong to just by knowing its numeric id.
-// =========================================================
 exports.getRoomMessages = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -58,19 +49,36 @@ exports.getRoomMessages = async (req, res) => {
             }]
         });
 
-        const formatted = messages.map((m) => ({
-            id: m.id,
-            roomId: m.roomId,
-            senderId: m.senderId,
-            senderName: m.Sender ? m.Sender.name : null,
-            messageType: m.messageType,
-            content: m.content,
-            mediaUrl: m.mediaUrl,
-            fileName: m.fileName,
-            mimeType: m.mimeType,
-            createdAt: m.createdAt
-        }));
+        const formatted = await Promise.all(
+            messages.map(async (m) => {
+                let mediaUrl = null;
 
+                if (m.mediaKey) {
+                    mediaUrl = await getSignedUrl(
+                        s3Client,
+                        new GetObjectCommand({
+                            Bucket: process.env.AWS_S3_BUCKET,
+                            Key: m.mediaKey
+                        }),
+                        { expiresIn: 3600 }
+                    );
+                }
+
+                return {
+                    id: m.id,
+                    roomId: m.roomId,
+                    senderId: m.senderId,
+                    senderName: m.Sender ? m.Sender.name : null,
+                    messageType: m.messageType,
+                    content: m.content,
+                    mediaUrl,
+                    mediaKey: m.mediaKey,
+                    fileName: m.fileName,
+                    mimeType: m.mimeType,
+                    createdAt: m.createdAt
+                };
+            })
+        );
         return res.status(200).json({
             success: true,
             messages: formatted

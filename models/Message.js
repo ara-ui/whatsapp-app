@@ -29,6 +29,9 @@ const Message = db.define("Message", {
     mediaUrl: {
         type: DataTypes.STRING(1000),
         allowNull: true
+    },mediaKey: {
+        type: DataTypes.STRING(1000),
+        allowNull: true
     },
     fileName: {
         type: DataTypes.STRING(255),
