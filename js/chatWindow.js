@@ -37,10 +37,7 @@ const mediaFileInput =
 
 let currentRoom = null;
 
-
-// ============================================================
 // ROOM
-// ============================================================
 
 async function openRoom(room) {
 
@@ -82,9 +79,7 @@ async function openRoom(room) {
 }
 
 
-// ============================================================
 // MESSAGE HISTORY
-// ============================================================
 
 async function loadMessageHistory(roomId) {
 
@@ -116,11 +111,7 @@ async function loadMessageHistory(roomId) {
             </div>`;
     }
 }
-
-
-// ============================================================
 // SCROLL
-// ============================================================
 
 function scrollToBottom() {
 
@@ -179,10 +170,8 @@ messageInput.addEventListener(
     }
 );
 
-
-// ============================================================
 // MOBILE BACK BUTTON
-// ============================================================
+
 
 backBtn.addEventListener(
     "click",
@@ -194,10 +183,7 @@ backBtn.addEventListener(
     }
 );
 
-
-// ============================================================
 // MEDIA VIEWER CLICK
-// ============================================================
 
 messagesContainer.addEventListener(
     "click",
@@ -233,56 +219,71 @@ messagesContainer.addEventListener(
     }
 );
 
-
-// ============================================================
 // SOCKET.IO - NEW MESSAGE
-// ============================================================
+socket.on("room:message", (msg) => {
 
-socket.on(
-    "room:message",
-    (msg) => {
+    console.log("📩 room:message received:", msg);
 
-        if (
-            !currentRoom ||
-            msg.roomId !== currentRoom.id
-        ) {
-            return;
-        }
+    if (!currentRoom || msg.roomId !== currentRoom.id) {
+        console.log("❌ Wrong room");
+        return;
+    }
 
-        const beforeCount =
-            renderedMessageIds.size;
+    const emptyEl =
+        messagesContainer.querySelector(".empty-state");
 
-        appendMessage(
-            msg,
-            messagesContainer
+    if (emptyEl) {
+        emptyEl.remove();
+    }
+
+    appendMessage(msg, messagesContainer);
+    scrollToBottom();
+
+
+    if (msg.senderId !== currentUser.userId) {
+
+        console.log(
+            "🚚 Sending delivery event for message:",
+            msg.id
         );
 
-        // Message was already rendered.
-        // This prevents duplicate messages when the sender
-        // receives both the HTTP response and Socket.IO event.
-        if (
-            renderedMessageIds.size ===
-            beforeCount
-        ) {
-            return;
-        }
+        socket.emit(
+            "room:messageDelivered",
+            msg.id
+        );
 
-        const emptyEl =
-            messagesContainer.querySelector(
-                ".empty-state"
-            );
 
-        if (emptyEl) {
-            emptyEl.remove();
-        }
+        console.log(
+            "👁️ Sending read event for message:",
+            msg.id
+        );
 
-        scrollToBottom();
+        socket.emit(
+            "room:markRead",
+            {
+                messageId: msg.id
+            }
+        );
     }
-);
 
+});
 
-// ============================================================
+// SOCKET.IO - MESSAGE STATUS UPDATE
+
+socket.on("room:messageStatus", ({ messageId, status }) => {
+
+    console.log(
+        "📊 Message status update:",
+        messageId,
+        status
+    );
+
+    updateMessageStatus(
+        messageId,
+        status
+    );
+});
+
 // INITIALIZE MEDIA PREVIEW
-// ============================================================
 
 initializeMediaPreview();

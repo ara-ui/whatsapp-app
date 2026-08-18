@@ -18,7 +18,9 @@ function renderMessages(messages, container) {
     });
 }
 
+
 function appendMessage(msg, container) {
+
     if (!msg || !msg.id) {
         return;
     }
@@ -39,25 +41,129 @@ function appendMessage(msg, container) {
         minute: "2-digit"
     });
 
-    const isMine = msg.senderId === currentUser.userId;
+    const isMine =
+        Number(msg.senderId) === Number(currentUser.userId);
 
-    div.className = "message " + (isMine ? "mine" : "other");
+    div.className =
+        "message " + (isMine ? "mine" : "other");
+
     div.dataset.messageId = messageId;
 
     const senderLabel = !isMine
-        ? `<div class="sender">${escapeHtml(msg.senderName || "Unknown")}</div>`
+        ? `<div class="sender">
+                ${escapeHtml(msg.senderName || "Unknown")}
+           </div>`
         : "";
 
     div.innerHTML = `
         ${senderLabel}
+
         ${renderMessageBody(msg)}
-        <div class="time">${time}</div>
+
+        <div class="time">
+            <span>${time}</span>
+
+            ${
+                isMine
+                    ? `
+                        <span
+                            class="message-status"
+                            data-status-for="${messageId}"
+                        >
+                            ${renderStatus(msg.status || "sent")}
+                        </span>
+                    `
+                    : ""
+            }
+        </div>
     `;
 
     container.appendChild(div);
 }
 
+
+// ============================================================
+// MESSAGE STATUS
+// ============================================================
+
+function renderStatus(status) {
+
+    if (status === "read") {
+        return `
+            <span
+                class="status-ticks status-read"
+                title="Read"
+            >✓✓</span>
+        `;
+    }
+
+    if (status === "delivered") {
+        return `
+            <span
+                class="status-ticks status-delivered"
+                title="Delivered"
+            >✓✓</span>
+        `;
+    }
+
+    return `
+        <span
+            class="status-ticks status-sent"
+            title="Sent"
+        >✓</span>
+    `;
+}
+
+
+function updateMessageStatus(messageId, status) {
+
+    const id = String(messageId);
+
+    console.log(
+        "Updating UI status:",
+        id,
+        status
+    );
+
+    const message =
+        renderedMessages.get(id);
+
+    if (message) {
+        message.status = status;
+    }
+
+    const statusElement =
+        document.querySelector(
+            `.message[data-message-id="${id}"] .message-status`
+        );
+
+    if (!statusElement) {
+
+        console.log(
+            "Status element not found for message:",
+            id
+        );
+
+        return;
+    }
+
+    statusElement.innerHTML =
+        renderStatus(status);
+
+    console.log(
+        "UI status updated:",
+        id,
+        status
+    );
+}
+
+
+// ============================================================
+// MESSAGE BODY
+// ============================================================
+
 function renderMessageBody(msg) {
+
     if (msg.messageType === "image") {
         return `
             <img
@@ -71,7 +177,10 @@ function renderMessageBody(msg) {
 
     if (msg.messageType === "video") {
         return `
-            <div class="message-video-wrapper" data-media-action="view">
+            <div
+                class="message-video-wrapper"
+                data-media-action="view"
+            >
                 <video
                     class="message-media-video"
                     muted
@@ -103,13 +212,23 @@ function renderMessageBody(msg) {
         `;
     }
 
-    return `<div class="text">${escapeHtml(msg.content || "")}</div>`;
+    return `
+        <div class="text">
+            ${escapeHtml(msg.content || "")}
+        </div>
+    `;
 }
+
 
 function findMessageById(messageId) {
-    return renderedMessages.get(String(messageId));
+    return renderedMessages.get(
+        String(messageId)
+    );
 }
 
+
 function hasRenderedMessage(messageId) {
-    return renderedMessageIds.has(String(messageId));
+    return renderedMessageIds.has(
+        String(messageId)
+    );
 }
