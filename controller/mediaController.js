@@ -92,7 +92,7 @@ exports.uploadMedia = (req, res) => {
             }
 
             const messageType = getMessageTypeFromMime(file.mimetype);
-           const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+            const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
             const s3Key = `media/${roomId}/${crypto.randomUUID()}-${safeName}`;
 
             try {
@@ -164,4 +164,234 @@ exports.uploadMedia = (req, res) => {
             });
         }
     });
+};
+
+
+// =========================================================
+// Load a media message from either the live Messages table
+// or the ArchivedMessages table and verify room authorization.
+// =========================================================
+
+const ArchivedMessage = require("../models/ArchivedMessage");
+
+async function loadAuthorizedMediaMessage(userId, messageId) {
+
+    let message = await Message.findByPk(messageId);
+
+    if (!message) {
+        message = await ArchivedMessage.findByPk(messageId);
+    }
+
+    if (!message || !message.mediaKey) {
+        return {
+            error: {
+                status: 404,
+                message: "Media not found"
+            }
+        };
+    }
+
+    const room = await Room.findByPk(message.roomId);
+
+    if (!room) {
+        return {
+            error: {
+                status: 404,
+                message: "Room not found"
+            }
+        };
+    }
+
+    const authorized = await isAuthorizedForRoom(
+        userId,
+        room
+    );
+
+    if (!authorized) {
+        return {
+            error: {
+                status: 403,
+                message: "You are not authorized to access this media"
+            }
+        };
+    }
+
+    return {
+        message
+    };
+}
+
+
+// =========================================================
+// GET /media/:messageId/url
+//
+// Generate a fresh signed URL for viewing media.
+// =========================================================
+
+exports.getSignedMediaUrl = async (req, res) => {
+
+    try {
+
+        const userId = req.user.id;
+
+        const messageId =
+            parseInt(req.params.messageId, 10);
+
+        if (isNaN(messageId)) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid message id"
+            });
+
+        }
+
+        const {
+            message,
+            error
+        } = await loadAuthorizedMediaMessage(
+            userId,
+            messageId
+        );
+
+        if (error) {
+
+            return res.status(error.status).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+        const mediaUrl =
+            await getSignedUrl(
+                s3Client,
+                new GetObjectCommand({
+                    Bucket:
+                        process.env.AWS_S3_BUCKET,
+
+                    Key:
+                        message.mediaKey
+                }),
+                {
+                    expiresIn: 3600
+                }
+            );
+
+        return res.status(200).json({
+
+            success: true,
+
+            mediaUrl,
+
+            fileName:
+                message.fileName,
+
+            mimeType:
+                message.mimeType,
+
+            messageType:
+                message.messageType
+
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+
+    }
+};
+
+
+// =========================================================
+// GET /media/:messageId/download
+//
+// Generate a fresh signed URL specifically for download.
+// =========================================================
+
+exports.downloadMedia = async (req, res) => {
+
+    try {
+
+        const userId = req.user.id;
+
+        const messageId =
+            parseInt(req.params.messageId, 10);
+
+        if (isNaN(messageId)) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Invalid message id"
+            });
+
+        }
+
+        const {
+            message,
+            error
+        } = await loadAuthorizedMediaMessage(
+            userId,
+            messageId
+        );
+
+        if (error) {
+
+            return res.status(error.status).json({
+                success: false,
+                message: error.message
+            });
+
+        }
+
+        const safeDownloadName =
+            (message.fileName || "download")
+                .replace(/["\r\n]/g, "_");
+
+        const downloadUrl =
+            await getSignedUrl(
+                s3Client,
+                new GetObjectCommand({
+
+                    Bucket:
+                        process.env.AWS_S3_BUCKET,
+
+                    Key:
+                        message.mediaKey,
+
+                    ResponseContentDisposition:
+                        `attachment; filename="${safeDownloadName}"`
+
+                }),
+                {
+                    expiresIn: 300
+                }
+            );
+
+        return res.status(200).json({
+
+            success: true,
+
+            downloadUrl,
+
+            fileName:
+                message.fileName
+
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+
+    }
 };

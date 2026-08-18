@@ -92,14 +92,14 @@ function renderMessageBody(msg) {
 
     if (msg.messageType === "file") {
         return `
-            <a
+            <div
                 class="message-media-file"
-                href="${escapeHtml(msg.mediaUrl)}"
-                target="_blank"
-                rel="noopener noreferrer"
+                data-media-action="view"
             >
-                📄 ${escapeHtml(msg.fileName || "Open file")}
-            </a>
+                📄 ${escapeHtml(
+                    msg.fileName || "Open file"
+                )}
+            </div>
         `;
     }
 

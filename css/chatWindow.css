@@ -407,3 +407,91 @@
 
     pointer-events: none;
 }
+
+/* =========================
+   Media Viewer Actions
+========================= */
+
+.media-viewer-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+}
+
+.media-viewer-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.media-viewer-btn {
+    padding: 9px 20px;
+    border-radius: 20px;
+    border: none;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    font-size: 14px;
+}
+
+.media-viewer-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.media-viewer-btn.primary {
+    background: #25D366;
+    color: white;
+}
+
+.media-viewer-btn.primary:hover {
+    background: #128C7E;
+}
+
+.media-viewer-loading,
+.media-viewer-error {
+    color: white;
+    font-size: 15px;
+    text-align: center;
+    padding: 20px;
+    max-width: 320px;
+}
+
+.media-viewer-file {
+    background: white;
+    border-radius: 12px;
+    padding: 34px 42px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    max-width: 90vw;
+}
+
+.media-viewer-file-icon {
+    font-size: 50px;
+}
+
+.media-viewer-file-name {
+    font-size: 15px;
+    color: #222;
+    word-break: break-all;
+    text-align: center;
+}
+
+.media-viewer-file .media-viewer-btn {
+    color: #075E54;
+    background: #f0f2f5;
+}
+
+.media-viewer-file .media-viewer-btn:hover {
+    background: #e2e2e2;
+}
+
+.media-viewer-file .media-viewer-btn.primary {
+    background: #25D366;
+    color: white;
+}
+
+.media-viewer-file .media-viewer-btn.primary:hover {
+    background: #128C7E;
+}
