@@ -115,8 +115,20 @@ async function loadMessageHistory(roomId) {
 
 function scrollToBottom() {
 
-    messagesContainer.scrollTop =
-        messagesContainer.scrollHeight;
+    requestAnimationFrame(() => {
+
+        messagesContainer.scrollTop =
+            messagesContainer.scrollHeight;
+
+        setTimeout(() => {
+
+            messagesContainer.scrollTop =
+                messagesContainer.scrollHeight;
+
+        }, 50);
+
+    });
+
 }
 
 
@@ -239,25 +251,21 @@ socket.on("room:message", (msg) => {
     appendMessage(msg, messagesContainer);
     scrollToBottom();
 
+    if (
+    msg.senderId !== currentUser.userId &&
+    typeof loadSmartReplies === "function"
+    ) {
+
+        loadSmartReplies();
+
+    }
 
     if (msg.senderId !== currentUser.userId) {
-
-        console.log(
-            "🚚 Sending delivery event for message:",
-            msg.id
-        );
 
         socket.emit(
             "room:messageDelivered",
             msg.id
         );
-
-
-        console.log(
-            "👁️ Sending read event for message:",
-            msg.id
-        );
-
         socket.emit(
             "room:markRead",
             {
@@ -272,11 +280,7 @@ socket.on("room:message", (msg) => {
 
 socket.on("room:messageStatus", ({ messageId, status }) => {
 
-    console.log(
-        "📊 Message status update:",
-        messageId,
-        status
-    );
+    
 
     updateMessageStatus(
         messageId,

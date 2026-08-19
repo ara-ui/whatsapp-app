@@ -18,6 +18,7 @@ const userRoutes=require('./routes/userRoutes');
 const roomRoutes=require('./routes/roomRoutes');
 const messageRoutes=require('./routes/messageRoutes');
 const mediaRoutes=require('./routes/mediaRoutes');
+const aiRoutes = require("./routes/aiRoutes");
 
 const app=express();
 const server=http.createServer(app);
@@ -44,6 +45,7 @@ app.use("/user",userRoutes);
 app.use("/rooms",roomRoutes);
 app.use("/rooms",messageRoutes);
 app.use("/media",mediaRoutes);
+app.use("/ai", aiRoutes);
 
 //home page
 app.get("/",(req ,res)=>{

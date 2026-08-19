@@ -495,3 +495,159 @@
 .media-viewer-file .media-viewer-btn.primary:hover {
     background: #128C7E;
 }
+/* ============================================================
+   MESSAGE DELIVERY / READ STATUS
+   ============================================================ */
+
+.message-status {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+.status-ticks {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-sent {
+    color: #777;
+}
+
+.status-delivered {
+    color: #777;
+}
+
+.status-read {
+    color: #2196f3;
+}
+/* =========================================================
+   AI SMART REPLIES
+   ========================================================= */
+
+.ai-smart-replies {
+    display: none;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f5f7f8;
+    border-top: 1px solid #e5e5e5;
+    overflow-x: auto;
+}
+
+.ai-smart-replies.visible {
+    display: flex;
+}
+
+.ai-reply-btn {
+    border: 1px solid #d8d8d8;
+    background: white;
+    border-radius: 12px;
+    padding: 9px 13px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+}
+
+.ai-reply-btn:hover {
+    background: #e9f8ef;
+    border-color: #25d366;
+}
+
+
+/* =========================================================
+   AI PREDICTIVE TYPING
+   ========================================================= */
+
+.ai-predictive-suggestions {
+    display: none;
+    gap: 7px;
+    padding: 6px 12px;
+    background: #ffffff;
+    border-top: 1px solid #eeeeee;
+    overflow-x: auto;
+}
+
+.ai-predictive-suggestions.visible {
+    display: flex;
+}
+
+.ai-predictive-btn {
+    border: none;
+    background: #f0f2f5;
+    border-radius: 10px;
+    padding: 7px 11px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #333;
+}
+
+.ai-predictive-btn:hover {
+    background: #e2e5e8;
+}
+
+
+/* =========================================================
+   AI LOADING STATE
+   ========================================================= */
+
+.ai-loading {
+    font-size: 12px;
+    color: #777;
+    padding: 6px 12px;
+    font-style: italic;
+}
+
+
+/* =========================================================
+   INPUT AREA
+   ========================================================= */
+
+.chat-input-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+/* =========================================================
+   CHAT WINDOW LAYOUT FIX
+   ========================================================= */
+
+.chat-window-active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.chat-window-header {
+    flex-shrink: 0;
+}
+
+/* Messages must occupy the available space */
+.messages,
+#messagesContainer {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Bottom input area must remain visible */
+.chat-input {
+    flex-shrink: 0;
+}
+
+/* AI suggestions */
+#aiSuggestions {
+    flex-shrink: 0;
+}
+
+/* Actual input */
+#chatInput {
+    flex-shrink: 0;
+}

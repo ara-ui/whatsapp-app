@@ -4,14 +4,24 @@
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
 
     <title>ChatApp</title>
 
-    <link rel="stylesheet" href="/css/home.css">
-    <link rel="stylesheet" href="/css/chatWindow.css">
+    <link
+        rel="stylesheet"
+        href="/css/home.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link
+        rel="stylesheet"
+        href="/css/chatWindow.css">
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js">
+    </script>
 
 </head>
 
@@ -19,83 +29,52 @@
 
     <div class="app-container">
 
-        <!-- ================= LEFT: CHAT LIST ================= -->
+        <!-- ================= SIDEBAR ================= -->
 
         <div class="sidebar">
 
-            <!-- Top bar -->
+            <div id="sidebarHeader"></div>
 
-            <div class="sidebar-topbar">
-
-                <h1 class="app-title">ChatApp</h1>
-
-                <div class="topbar-actions">
-
-                    <button id="newChatBtn" class="icon-btn" title="Start a personal chat">💬</button>
-
-                    <button id="newGroupBtn" class="icon-btn" title="Create a group">➕</button>
-
-                    <div class="menu-wrapper">
-
-                        <button id="menuBtn" class="icon-btn" title="Menu">⋮</button>
-
-                        <div id="menuDropdown" class="menu-dropdown hidden">
-                            <button id="logoutBtn" class="menu-item">Logout</button>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-            <!-- Search -->
-
-            <div class="sidebar-search">
-                <input type="text" id="searchInput" placeholder="Search or start a new chat">
-            </div>
-
-            <!-- Chat list -->
-
-            <div id="chatList" class="chat-list">
-                <div class="empty-state">Loading chats…</div>
-            </div>
+            <div id="chatListSection"></div>
 
         </div>
 
 
-        <!-- ================= RIGHT: REUSABLE CHAT WINDOW ================= -->
+        <!-- ================= CHAT WINDOW ================= -->
 
-        <div id="chatWindowPanel" class="chat-window-panel">
+        <div
+            id="chatWindowPanel"
+            class="chat-window-panel">
 
-            <!-- Shown until a conversation is opened -->
-            <div id="chatWindowEmptyState" class="chat-window-empty">
-                <p>Select a chat to start messaging</p>
+            <div
+                id="chatWindowEmptyState"
+                class="chat-window-empty">
+
+                <p>
+                    Select a chat to start messaging
+                </p>
+
             </div>
 
-            <!-- The one reusable conversation view, hidden until a room is opened -->
-            <div id="chatWindowActive" class="chat-window-active hidden">
 
-                <div class="chat-window-header">
+            <div
+                id="chatWindowActive"
+                class="chat-window-active hidden">
 
-                    <button id="backBtn" class="icon-btn back-btn" title="Back">←</button>
+                <!-- Header -->
+                <div id="chatWindowHeader"></div>
 
-                    <div class="chat-window-avatar" id="chatWindowAvatar">💬</div>
-
-                    <div class="chat-window-header-text">
-                        <h2 id="chatWindowTitle">Conversation</h2>
-                        <p id="chatWindowSubtitle"></p>
-                    </div>
-
-                </div>
-
+                <!-- Messages -->
                 <div id="messages" class="messages"></div>
 
+                <!-- Input area -->
+
                 <div class="chat-input">
-                    <button id="attachBtn" class="icon-btn attach-btn" title="Attach media">📎</button>
-                    <input type="file" id="mediaFileInput" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,application/pdf" hidden>
-                    <input type="text" id="messageInput" placeholder="Type a message...">
-                    <button id="sendBtn">Send</button>
+
+                    <div id="aiSuggestions"></div>
+
+                    <div id="chatInput"></div>
+
                 </div>
 
             </div>
@@ -105,49 +84,20 @@
     </div>
 
 
-    <!-- ================= MODAL: START PERSONAL CHAT ================= -->
+    <!-- ================= MODALS ================= -->
 
-    <div id="startChatModal" class="modal-overlay hidden">
-        <div class="modal">
-            <h3>Start a personal chat</h3>
-            <p class="modal-hint">Enter the exact email of a registered user</p>
-            <input type="email" id="startChatEmailInput" placeholder="user@example.com">
-            <div class="modal-actions">
-                <button id="startChatCancelBtn" class="btn-secondary">Cancel</button>
-                <button id="startChatSubmitBtn" class="btn-primary">Start Chat</button>
-            </div>
-        </div>
-    </div>
+    <div id="personalChatModal"></div>
+
+    <div id="groupChatModal"></div>
 
 
-    <!-- ================= MODAL: CREATE GROUP ================= -->
-
-    <div id="createGroupModal" class="modal-overlay hidden">
-        <div class="modal">
-            <h3>Create a group</h3>
-            <input type="text" id="groupNameInput" placeholder="Group name">
-            <p class="modal-hint">Member emails, comma-separated</p>
-            <input type="text" id="groupMembersInput" placeholder="a@example.com, b@example.com">
-            <div class="modal-actions">
-                <button id="createGroupCancelBtn" class="btn-secondary">Cancel</button>
-                <button id="createGroupSubmitBtn" class="btn-primary">Create Group</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Socket.IO -->
 
     <script src="/socket.io/socket.io.js"></script>
 
-    <!-- Order matters: socketClient first (defines BASE_URL/token/socket globally),
-         then home.js and chatWindow.js which both use those globals. -->
-    <script src="/js/socketClient.js"></script>
-    <script src="/js/home.js"></script>
+    <!-- Component loader MUST run first -->
 
-    <script src="js/messageRenderer.js"></script>
-    <script src="js/mediaViewer.js"></script>
-    <script src="js/mediaPreview.js"></script>
-
-    <script src="/js/chatWindow.js"></script>
+    <script src="/js/componentsLoader.js"></script>
 
 </body>
 
