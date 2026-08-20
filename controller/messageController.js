@@ -8,6 +8,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3Client = require("../utils/s3Client");
 
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
+const { getMessageStatus } = require("../utils/messageStatus");
 
 exports.getRoomMessages = async (req, res) => {
     try {
@@ -64,6 +65,26 @@ exports.getRoomMessages = async (req, res) => {
                     );
                 }
 
+                // Status ticks are only ever shown on the current
+                // user's OWN messages (see messageRenderer.js), and
+                // community chat never tracks delivery/read state.
+                // Without this, reloading a conversation's history
+                // would reset every sent message back to a single
+                // "sent" tick even if it had already been delivered
+                // or read live.
+                let status = null;
+
+                if (
+                    Number(m.senderId) === Number(userId) &&
+                    room.type !== "community"
+                ) {
+                    status = await getMessageStatus(
+                        m.id,
+                        m.senderId,
+                        room.type
+                    );
+                }
+
                 return {
                     id: m.id,
                     roomId: m.roomId,
@@ -75,7 +96,8 @@ exports.getRoomMessages = async (req, res) => {
                     mediaKey: m.mediaKey,
                     fileName: m.fileName,
                     mimeType: m.mimeType,
-                    createdAt: m.createdAt
+                    createdAt: m.createdAt,
+                    status
                 };
             })
         );

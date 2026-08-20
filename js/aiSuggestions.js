@@ -74,27 +74,82 @@ function getRecentMessagesForAI() {
 
 
 // ============================================================
-// SMART REPLIES
+// GET LAST INCOMING MESSAGE
+//
+// "Latest rendered message" is not the same thing as "latest
+// message someone else sent me" — the last thing rendered could
+// easily be MY OWN message echoed back from the server. Smart
+// replies should only ever respond to something the other
+// person said, so this walks backward and skips anything sent
+// by the current user.
 // ============================================================
 
-async function loadSmartReplies() {
+function getLastIncomingMessage() {
+
+    if (
+        typeof renderedMessages === "undefined" ||
+        typeof currentUser === "undefined"
+    ) {
+        return null;
+    }
+
+    const all = Array.from(renderedMessages.values());
+
+    for (let i = all.length - 1; i >= 0; i--) {
+
+        const message = all[i];
+
+        if (
+            message &&
+            Number(message.senderId) !== Number(currentUser.userId) &&
+            message.content
+        ) {
+            return message.content;
+        }
+    }
+
+    return null;
+}
+
+
+// ============================================================
+// SMART REPLIES
+// ============================================================
+//
+// incomingMessage: the specific message to generate replies to.
+// Pass this explicitly whenever a real incoming message just
+// arrived (see chatWindow.js's "room:message" handler, which
+// passes msg.content directly). When omitted — e.g. the user
+// simply focuses the input — fall back to the most recent
+// message that was actually sent BY THE OTHER PERSON, never our
+// own last sent message.
+// ============================================================
+
+async function loadSmartReplies(incomingMessage) {
 
     if (!currentRoom) {
         return;
     }
 
-
-    const messages =
-        getRecentMessagesForAI();
-
-
-    if (messages.length === 0) {
+    if (
+        !aiSuggestionsPanel ||
+        !smartRepliesContainer
+    ) {
         return;
     }
 
 
-    const latestMessage =
-        messages[messages.length - 1];
+    const messageToReplyTo =
+        incomingMessage || getLastIncomingMessage();
+
+
+    if (!messageToReplyTo) {
+        return;
+    }
+
+
+    const recentMessages =
+        getRecentMessagesForAI();
 
 
     try {
@@ -117,8 +172,8 @@ async function loadSmartReplies() {
                 `${BASE_URL}/ai/smart-replies`,
 
                 {
-                    message: latestMessage,
-                    recentMessages: messages
+                    message: messageToReplyTo,
+                    recentMessages: recentMessages
                 },
 
                 {
@@ -371,7 +426,10 @@ function hidePredictiveSuggestions() {
         .add("hidden");
 }
 
+
+// ============================================================
 // INITIALIZE AFTER COMPONENTS LOAD
+// ============================================================
 
 document.addEventListener(
     "chatAppComponentsLoaded",

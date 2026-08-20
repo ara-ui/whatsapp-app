@@ -93,11 +93,19 @@ function renderRoomList(rooms) {
         item.className = "chat-list-item";
         item.dataset.roomId = room.id;
 
-        const preview = room.lastMessage
-            ? (room.lastMessage.senderId === currentUser.userId ? "You: " : "") + room.lastMessage.content
-            : "No messages yet";
+        const unreadCount = room.unreadCount || 0;
+        const hasUnread = unreadCount > 0;
+
+        const preview = hasUnread
+            ? (unreadCount === 1 ? "New message" : "New messages")
+            : room.lastMessage
+                ? (room.lastMessage.senderId === currentUser.userId ? "You: " : "") + room.lastMessage.content
+                : "No messages yet";
 
         const time = room.lastMessage ? formatTime(room.lastMessage.createdAt) : "";
+
+        item.className =
+            "chat-list-item" + (hasUnread ? " has-unread" : "");
 
         item.innerHTML = `
             <div class="chat-avatar">${roomIcon(room.type)}</div>
@@ -106,7 +114,10 @@ function renderRoomList(rooms) {
                     <span class="chat-name">${escapeHtml(room.name || "Unnamed")}</span>
                     <span class="chat-time">${escapeHtml(time)}</span>
                 </div>
-                <div class="chat-preview">${escapeHtml(preview)}</div>
+                <div class="chat-row-bottom">
+                    <div class="chat-preview${hasUnread ? " unread-preview" : ""}">${escapeHtml(preview)}</div>
+                    ${hasUnread ? `<span class="unread-badge">${unreadCount > 99 ? "99+" : unreadCount}</span>` : ""}
+                </div>
             </div>
         `;
 

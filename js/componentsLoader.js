@@ -169,6 +169,23 @@ async function initializeApplication() {
             "🎉 ChatApp initialized successfully"
         );
 
+        // Let modules that couldn't run at parse-time (because
+        // they depend on other modules/DOM elements that load
+        // after them — e.g. aiSuggestions.js needs the
+        // aiSuggestions.html component's elements to exist)
+        // know that the whole app is now wired up and ready.
+        //
+        // ROOT CAUSE FIX: aiSuggestions.js has always listened
+        // for this exact event to call initializeAISuggestions()
+        // (which wires up the smart-reply panel AND the
+        // predictive-typing input listener). Nothing was ever
+        // dispatching it, so initializeAISuggestions() never ran,
+        // the panel elements stayed undefined, and both smart
+        // replies and predictive typing silently failed.
+        document.dispatchEvent(
+            new CustomEvent("chatAppComponentsLoaded")
+        );
+
     } catch (error) {
 
         console.error(

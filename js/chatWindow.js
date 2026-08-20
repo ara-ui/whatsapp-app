@@ -76,6 +76,15 @@ async function openRoom(room) {
     );
 
     await loadMessageHistory(room.id);
+
+    // Opening a room is also what marks its messages read
+    // server-side (see the "room:join" handler), which clears
+    // this room's unread badge. Refresh the chat list so that
+    // badge disappears immediately instead of waiting for the
+    // next unrelated "room:message" event to trigger a reload.
+    if (typeof loadRooms === "function") {
+        loadRooms();
+    }
 }
 
 
@@ -236,7 +245,18 @@ socket.on("room:message", (msg) => {
 
     console.log("📩 room:message received:", msg);
 
-    if (!currentRoom || msg.roomId !== currentRoom.id) {
+    const isForOpenRoom =
+        currentRoom && msg.roomId === currentRoom.id;
+
+    if (!isForOpenRoom) {
+
+        // Not the conversation the user currently has open.
+        // Delivery is already handled server-side the moment
+        // this event reaches our socket (see socket-io/handlers/
+        // room.js), and the chat list's unread badge is kept in
+        // sync separately (see home.js's own "room:message"
+        // listener, which reloads the room list). There is
+        // nothing to render here.
         console.log("❌ Wrong room");
         return;
     }
@@ -256,16 +276,21 @@ socket.on("room:message", (msg) => {
     typeof loadSmartReplies === "function"
     ) {
 
-        loadSmartReplies();
+        // Pass the actual incoming message straight through so
+        // smart replies are always generated for THIS message,
+        // never accidentally for whatever happens to be last in
+        // the rendered list (which could be our own message).
+        loadSmartReplies(msg.content);
 
     }
 
+    // We're actively looking at this conversation right now,
+    // so any message that just arrived in it is READ, not just
+    // delivered. (Delivery itself — the gray tick — is decided
+    // server-side based on whether the recipient's socket was
+    // online, regardless of which room they had open.)
     if (msg.senderId !== currentUser.userId) {
 
-        socket.emit(
-            "room:messageDelivered",
-            msg.id
-        );
         socket.emit(
             "room:markRead",
             {

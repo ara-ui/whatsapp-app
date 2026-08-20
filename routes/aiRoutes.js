@@ -7,15 +7,19 @@ const {
     getPredictiveSuggestions
 } = require("../controller/aiController");
 
+const { authenticate } = require("../middleware/authentication");
+
 
 router.post(
     "/smart-replies",
+    authenticate,
     getSmartReplies
 );
 
 
 router.post(
     "/predictive",
+    authenticate,
     getPredictiveSuggestions
 );
 

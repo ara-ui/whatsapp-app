@@ -4,6 +4,7 @@ const Room = require("../models/Room");
 const RoomMember = require("../models/RoomMember");
 const Message = require("../models/Message");
 const User = require("../models/User");
+const MessageRecipient = require("../models/MessageRecipient");
 
 
 // first time it's needed. There is only ever one of these.
@@ -108,10 +109,28 @@ exports.getRooms = async (req, res) => {
                     displayName = otherMember ? otherMember.name : "Unknown User";
                 }
 
+                // Unread badge: how many messages in this room are
+                // still waiting to be read BY the current user.
+                // (Community messages never get MessageRecipient rows,
+                // so this naturally comes back 0 for the community room.)
+                const unreadCount = await MessageRecipient.count({
+                    where: {
+                        recipientId: userId,
+                        status: { [Op.ne]: "read" }
+                    },
+                    include: [{
+                        model: Message,
+                        attributes: [],
+                        where: { roomId: room.id },
+                        required: true
+                    }]
+                });
+
                 return {
                     id: room.id,
                     type: room.type,
                     name: displayName,
+                    unreadCount,
                     lastMessage: lastMessage ? {
                         content: lastMessage.content,
                         senderId: lastMessage.senderId,

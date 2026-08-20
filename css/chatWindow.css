@@ -133,12 +133,31 @@
 
 /* Input bar */
 
+/* This wraps BOTH the AI suggestions panel (#aiSuggestions) and
+   the actual text-input row (#chatInput) — see public/home.html:
+       <div class="chat-input">
+           <div id="aiSuggestions">...</div>
+           <div id="chatInput">...</div>
+       </div>
+   It needs to stack those vertically (suggestions above the
+   input). The actual horizontal "attach / text / send" row lives
+   one level deeper, inside chatInput.html's ".input-row" — that's
+   the element that should be a horizontal flex row, not this
+   wrapper. (".chat-input input[type=text]" /
+   ".chat-input button#sendBtn" below still reach into
+   ".input-row" fine as descendant selectors regardless of the
+   extra nesting.) */
 .chat-input {
     background: #f0f2f5;
     display: flex;
+    flex-direction: column;
+    border-top: 1px solid #ddd;
+}
+
+.input-row {
+    display: flex;
     align-items: center;
     padding: 12px 15px;
-    border-top: 1px solid #ddd;
 }
 
 .attach-btn {
@@ -526,6 +545,88 @@
 .status-read {
     color: #2196f3;
 }
+/* =========================================================
+   AI SMART REPLIES
+   (actual classes used by aiSuggestions.html / aiSuggestions.js —
+   the .ai-smart-replies / .ai-reply-btn rules below this block
+   were written against different class names and never matched
+   the real markup)
+   ========================================================= */
+
+.ai-suggestions-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #f5f7f8;
+    border-top: 1px solid #e5e5e5;
+}
+
+.predictive-suggestions {
+    display: flex;
+    gap: 7px;
+    padding: 6px 12px;
+    background: #ffffff;
+    border-top: 1px solid #eeeeee;
+    overflow-x: auto;
+}
+
+/* Both panels start out with the shared ".hidden" utility class
+   in the HTML. That utility is a single-class selector just like
+   ".ai-suggestions-panel" / ".predictive-suggestions" above, so
+   without extra specificity here, source order alone would decide
+   the winner — and since this stylesheet loads AFTER home.css
+   (which defines ".hidden"), these panels would incorrectly show
+   by default. This two-class selector always wins regardless of
+   load order. */
+.ai-suggestions-panel.hidden,
+.predictive-suggestions.hidden {
+    display: none;
+}
+
+.ai-suggestions-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+}
+
+.smart-replies {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+}
+
+.smart-reply-btn {
+    border: 1px solid #d8d8d8;
+    background: white;
+    border-radius: 12px;
+    padding: 9px 13px;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.2s;
+}
+
+.smart-reply-btn:hover {
+    background: #e9f8ef;
+    border-color: #25d366;
+}
+
+.predictive-btn {
+    border: none;
+    background: #f0f2f5;
+    border-radius: 10px;
+    padding: 7px 11px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #333;
+}
+
+.predictive-btn:hover {
+    background: #e2e5e8;
+}
+
 /* =========================================================
    AI SMART REPLIES
    ========================================================= */
