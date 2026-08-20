@@ -371,10 +371,7 @@ function hidePredictiveSuggestions() {
         .add("hidden");
 }
 
-
-// ============================================================
 // INITIALIZE AFTER COMPONENTS LOAD
-// ============================================================
 
 document.addEventListener(
     "chatAppComponentsLoaded",
