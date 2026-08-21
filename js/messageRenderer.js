@@ -1,12 +1,6 @@
 const renderedMessageIds = new Set();
 const renderedMessages = new Map();
 
-// A "room:messageStatus" event can arrive for a message that
-// hasn't been appended to the DOM yet (e.g. our own sent
-// message is still waiting on the "room:message" broadcast to
-// round-trip back to us when the status update shows up).
-// Instead of dropping that update on the floor, park it here
-// and apply it the moment the message element actually exists.
 const pendingStatusUpdates = new Map();
 
 function renderMessages(messages, container) {
@@ -89,10 +83,6 @@ function appendMessage(msg, container) {
 
     container.appendChild(div);
 
-    // If a status update for this message arrived before we
-    // got here (see the race condition note above), apply it
-    // now instead of leaving the tick stuck at whatever it was
-    // rendered with initially.
     if (pendingStatusUpdates.has(messageId)) {
 
         const pendingStatus =
@@ -104,10 +94,7 @@ function appendMessage(msg, container) {
     }
 }
 
-
-// ============================================================
 // MESSAGE STATUS
-// ============================================================
 
 function renderStatus(status) {
 
@@ -162,12 +149,7 @@ function updateMessageStatus(messageId, status) {
 
     if (!statusElement) {
 
-        // The message element doesn't exist in the DOM yet —
-        // most likely this status update raced ahead of our own
-        // "room:message" broadcast for the same message. Park it
-        // so appendMessage() can apply it as soon as the element
-        // is created, instead of just logging and losing it.
-        console.log(
+         console.log(
             "Status element not found for message (buffering):",
             id
         );
@@ -187,10 +169,7 @@ function updateMessageStatus(messageId, status) {
     );
 }
 
-
-// ============================================================
 // MESSAGE BODY
-// ============================================================
 
 function renderMessageBody(msg) {
 

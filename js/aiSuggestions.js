@@ -1,16 +1,12 @@
-// ============================================================
+
 // AI SUGGESTIONS FRONTEND
-// ============================================================
 
 let aiSuggestionsPanel;
 let smartRepliesContainer;
 let predictiveSuggestionsContainer;
 let aiMessageInput;
 
-
-// ============================================================
 // INITIALIZE
-// ============================================================
 
 function initializeAISuggestions() {
 
@@ -50,10 +46,7 @@ function initializeAISuggestions() {
     setupPredictiveTyping();
 }
 
-
-// ============================================================
 // GET RECENT MESSAGES
-// ============================================================
 
 function getRecentMessagesForAI() {
 
@@ -73,16 +66,7 @@ function getRecentMessagesForAI() {
 }
 
 
-// ============================================================
 // GET LAST INCOMING MESSAGE
-//
-// "Latest rendered message" is not the same thing as "latest
-// message someone else sent me" — the last thing rendered could
-// easily be MY OWN message echoed back from the server. Smart
-// replies should only ever respond to something the other
-// person said, so this walks backward and skips anything sent
-// by the current user.
-// ============================================================
 
 function getLastIncomingMessage() {
 
@@ -112,18 +96,7 @@ function getLastIncomingMessage() {
 }
 
 
-// ============================================================
 // SMART REPLIES
-// ============================================================
-//
-// incomingMessage: the specific message to generate replies to.
-// Pass this explicitly whenever a real incoming message just
-// arrived (see chatWindow.js's "room:message" handler, which
-// passes msg.content directly). When omitted — e.g. the user
-// simply focuses the input — fall back to the most recent
-// message that was actually sent BY THE OTHER PERSON, never our
-// own last sent message.
-// ============================================================
 
 async function loadSmartReplies(incomingMessage) {
 
@@ -240,10 +213,7 @@ async function loadSmartReplies(incomingMessage) {
     }
 }
 
-
-// ============================================================
 // PREDICTIVE TYPING
-// ============================================================
 
 let predictiveTimer;
 
@@ -296,10 +266,7 @@ function setupPredictiveTyping() {
     );
 }
 
-
-// ============================================================
 // LOAD PREDICTIVE SUGGESTIONS
-// ============================================================
 
 async function loadPredictiveSuggestions(text) {
 
@@ -350,10 +317,7 @@ async function loadPredictiveSuggestions(text) {
     }
 }
 
-
-// ============================================================
 // RENDER PREDICTIVE SUGGESTIONS
-// ============================================================
 
 function renderPredictiveSuggestions(
     suggestions
@@ -411,10 +375,7 @@ function renderPredictiveSuggestions(
     }
 }
 
-
-// ============================================================
 // HIDE PREDICTIVE SUGGESTIONS
-// ============================================================
 
 function hidePredictiveSuggestions() {
 
@@ -426,10 +387,7 @@ function hidePredictiveSuggestions() {
         .add("hidden");
 }
 
-
-// ============================================================
-// INITIALIZE AFTER COMPONENTS LOAD
-// ============================================================
+// INITIALIZE AFTER COMPONENTS LOAD from componentsLoader.js this listents for that that dispatch event
 
 document.addEventListener(
     "chatAppComponentsLoaded",

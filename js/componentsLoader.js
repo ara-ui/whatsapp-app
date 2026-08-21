@@ -131,32 +131,43 @@ async function initializeApplication() {
 
     try {
 
-        // 1. Socket / global variables
+        // Socket / global variables
         await loadScript(
             "/js/socketClient.js"
         );
 
-        // 2. Chat list / sidebar
+        // Chat list / sidebar
         await loadScript(
             "/js/home.js"
         );
 
-        // 3. Message rendering
+        await loadScript("/js/chatState.js");
+        
+        // Message rendering
         await loadScript(
             "/js/messageRenderer.js"
         );
 
-        // 4. Media viewer
+        // Chat scrolling
+        await loadScript(
+            "/js/chatScroll.js"
+        );
+
+        // Message operations
+        await loadScript(
+            "/js/chatMessages.js"
+        );
+        // Media viewer
         await loadScript(
             "/js/mediaViewer.js"
         );
 
-        // 5. Media preview
+        // Media preview
         await loadScript(
             "/js/mediaPreview.js"
         );
 
-        // 6. Chat window
+        // Chat window
         await loadScript(
             "/js/chatWindow.js"
         );
@@ -165,24 +176,12 @@ async function initializeApplication() {
             "/js/aiSuggestions.js"
         );
 
+
         console.log(
             "🎉 ChatApp initialized successfully"
         );
 
-        // Let modules that couldn't run at parse-time (because
-        // they depend on other modules/DOM elements that load
-        // after them — e.g. aiSuggestions.js needs the
-        // aiSuggestions.html component's elements to exist)
-        // know that the whole app is now wired up and ready.
-        //
-        // ROOT CAUSE FIX: aiSuggestions.js has always listened
-        // for this exact event to call initializeAISuggestions()
-        // (which wires up the smart-reply panel AND the
-        // predictive-typing input listener). Nothing was ever
-        // dispatching it, so initializeAISuggestions() never ran,
-        // the panel elements stayed undefined, and both smart
-        // replies and predictive typing silently failed.
-        document.dispatchEvent(
+         document.dispatchEvent(
             new CustomEvent("chatAppComponentsLoaded")
         );
 

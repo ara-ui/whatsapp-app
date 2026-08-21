@@ -1,0 +1,1 @@
+let currentRoom=null;
