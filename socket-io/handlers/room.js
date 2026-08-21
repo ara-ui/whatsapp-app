@@ -17,12 +17,6 @@ const {
     getAllRoomIdsForUser
 } = require("../../utils/roomAuthorization");
 
-
-// ============================================================
-// Recompute a message's status and broadcast it to its room.
-// Small shared helper so every place that changes delivery/read
-// state reports it back to the sender the same way.
-// ============================================================
 async function broadcastMessageStatus(io, messageId) {
 
     const message = await Message.findByPk(messageId);
@@ -55,26 +49,7 @@ async function broadcastMessageStatus(io, messageId) {
 
 const roomHandler = (io, socket) => {
 
-    // ========================================================
-    // ON CONNECT
-    // ========================================================
-    // Two things need to happen the moment a user's socket
-    // connects, BEFORE they've opened any specific conversation:
-    //
-    // 1. Auto-join every room this user belongs to (not just the
-    //    one currently open in the UI). Socket.IO only delivers
-    //    `io.to(roomId).emit(...)` to sockets that have actually
-    //    joined that room, so without this a message sent to a
-    //    conversation the recipient hasn't opened yet in this
-    //    session would never reach their socket at all — no
-    //    delivered tick, no chat-list update, nothing.
-    //
-    // 2. Anything that was sitting at "sent" while this user was
-    //    offline becomes "delivered" now that their client is
-    //    actually able to receive it, and every sender who's
-    //    waiting on that message gets notified.
-    // ========================================================
-    (async () => {
+       (async () => {
 
         try {
 
@@ -153,25 +128,24 @@ const roomHandler = (io, socket) => {
                 `${socket.user.name} joined room ${room.id} (${room.type})`
             );
 
-            // The user is now actively looking at this
-            // conversation, so everything in it that isn't
-            // already "read" becomes "read" — this is the
-            // signal that turns the sender's ticks blue and
-            // clears this user's unread badge for the room.
-            if (room.type !== "community") {
+            const readMessageIds =
+            await markAllReadForRoom(
+                room.id,
+                socket.user.userId
+            );
 
-                const readMessageIds =
-                    await markAllReadForRoom(
-                        room.id,
-                        socket.user.userId
-                    );
 
-                await Promise.all(
-                    readMessageIds.map(messageId =>
-                        broadcastMessageStatus(io, messageId)
+        if (room.type !== "community") {
+
+            await Promise.all(
+                readMessageIds.map(messageId =>
+                    broadcastMessageStatus(
+                        io,
+                        messageId
                     )
-                );
-            }
+                )
+            );
+        }
 
         } catch (err) {
 
@@ -265,80 +239,74 @@ const roomHandler = (io, socket) => {
 
 
 
-                // CREATE DELIVERY / READ TRACKING
+             // CREATE DELIVERY / READ TRACKING
            
-            if (room.type !== "community") {
+            let recipientIds = [];
 
-                const members =
-                    await RoomMember.findAll({
+            if (room.type === "community") {
 
-                        where: {
-                            roomId: room.id
-                        },
-
-                        attributes: [
-                            "userId"
-                        ]
-                    });
-
-
-                const recipientIds =
-                    members.map(
-                        member => member.userId
-                    );
-
-
-                await createRecipientRows(
-                    message,
-                    recipientIds
-                );
-
-
-                // Anyone other than the sender who is
-                // currently online (their socket has already
-                // joined this room — every member auto-joins
-                // all their rooms on connect) has, by
-                // definition, just received this message on
-                // their device. That's a "delivered" tick,
-                // NOT "read" — reading only happens once they
-                // actually open this specific conversation
-                // (see "room:join" above).
-                const socketsInRoom =
-                    io.sockets.adapter.rooms.get(
-                        String(room.id)
-                    ) || new Set();
-
-                const onlineUserIds = new Set();
-
-                socketsInRoom.forEach(socketId => {
-
-                    const memberSocket =
-                        io.sockets.sockets.get(socketId);
-
-                    if (
-                        memberSocket &&
-                        memberSocket.user &&
-                        Number(memberSocket.user.userId) !==
-                            Number(message.senderId)
-                    ) {
-                        onlineUserIds.add(
-                            Number(memberSocket.user.userId)
-                        );
-                    }
+                const users = await User.findAll({
+                    attributes: ["id"]
                 });
 
-                await Promise.all(
-                    [...onlineUserIds].map(userId =>
-                        markDelivered(message.id, userId)
-                    )
+                recipientIds = users.map(
+                    user => user.id
+                );
+
+            } else {
+
+                const members = await RoomMember.findAll({
+                    where: {
+                        roomId: room.id
+                    },
+
+                    attributes: ["userId"]
+                });
+
+                recipientIds = members.map(
+                    member => member.userId
                 );
             }
 
+            await createRecipientRows(
+                message,
+                recipientIds
+            );
 
-            // Compute the message's status right away so the
-            // sender's own UI doesn't have to wait for a
-            // separate "room:messageStatus" round trip just to
-            // show the correct first tick.
+            const socketsInRoom =
+                io.sockets.adapter.rooms.get(
+                    String(room.id)
+                ) || new Set();
+
+            const onlineUserIds = new Set();
+
+            socketsInRoom.forEach(socketId => {
+
+                const memberSocket =
+                    io.sockets.sockets.get(socketId);
+
+                if (
+                    memberSocket &&
+                    memberSocket.user &&
+                    Number(memberSocket.user.userId) !==
+                        Number(message.senderId)
+                ) {
+                    onlineUserIds.add(
+                        Number(memberSocket.user.userId)
+                    );
+                }
+            });
+
+            await Promise.all(
+                [...onlineUserIds].map(userId =>
+                    markDelivered(
+                        message.id,
+                        userId
+                    )
+                )
+            );
+
+            
             const initialStatus =
                 await getMessageStatus(
                     message.id,
@@ -413,12 +381,6 @@ const roomHandler = (io, socket) => {
     });
 
 
-    // MESSAGE DELIVERED
-    // Kept for compatibility with the existing event name/shape.
-    // In practice delivery is now decided server-side at send time
-    // (see "room:send" above) and on reconnect (see "ON CONNECT"
-    // above), so this mostly matters as a manual fallback.
- 
     socket.on(
         "room:messageDelivered",
         async (messageId) => {
