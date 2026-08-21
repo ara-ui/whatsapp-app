@@ -13,12 +13,45 @@ async function loadMessageHistory(roomId) {
             }
         );
 
+        const messages =
+            response.data.messages || [];
+
+
+        // Render message history
         renderMessages(
-            response.data.messages || [],
+            messages,
             messagesContainer
         );
 
+
+        // Scroll to latest message
         scrollToLatestAfterHistory();
+
+         // AI SMART REPLIES
+      
+        const latestMessage =
+            messages[messages.length - 1];
+
+
+        if (
+            latestMessage &&
+            Number(latestMessage.senderId) !==
+                Number(currentUser.userId) &&
+            latestMessage.content
+        ) {
+
+            loadSmartReplies(
+                latestMessage.content,
+                latestMessage.id,
+                latestMessage.roomId
+            );
+
+        } else {
+
+            clearAISuggestions();
+
+        }
+
 
     } catch (err) {
 
@@ -49,6 +82,13 @@ function sendCurrentMessage() {
         );
 
         return;
+    }
+    if (
+        typeof clearAISuggestions === "function"
+    ) {
+
+        clearAISuggestions();
+
     }
 
     socket.emit(
@@ -104,19 +144,21 @@ socket.on("room:message", (msg) => {
  // AI SMART REPLIES
 
     if (
-        msg.senderId !== currentUser.userId &&
+        Number(msg.senderId) !== Number(currentUser.userId) &&
         typeof loadSmartReplies === "function"
     ) {
 
         loadSmartReplies(
-            msg.content
+            msg.content,
+            msg.id,
+            msg.roomId
         );
     }
 
  // READ RECEIPT
   
     if (
-        msg.senderId !== currentUser.userId
+        Number(msg.senderId) !== Number(currentUser.userId)
     ) {
 
         socket.emit(

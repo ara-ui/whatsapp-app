@@ -142,7 +142,7 @@ async function initializeApplication() {
         );
 
         await loadScript("/js/chatState.js");
-        
+
         // Message rendering
         await loadScript(
             "/js/messageRenderer.js"
@@ -176,6 +176,9 @@ async function initializeApplication() {
             "/js/aiSuggestions.js"
         );
 
+        await loadScript(
+            "/js/wordSuggestions.js"
+        );
 
         console.log(
             "🎉 ChatApp initialized successfully"

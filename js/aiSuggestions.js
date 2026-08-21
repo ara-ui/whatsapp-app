@@ -1,10 +1,8 @@
 
-// AI SUGGESTIONS FRONTEND
-
 let aiSuggestionsPanel;
 let smartRepliesContainer;
-let predictiveSuggestionsContainer;
 let aiMessageInput;
+let smartReplyRequestId = 0;
 
 // INITIALIZE
 
@@ -16,9 +14,6 @@ function initializeAISuggestions() {
     smartRepliesContainer =
         document.getElementById("smartReplies");
 
-    predictiveSuggestionsContainer =
-        document.getElementById("predictiveSuggestions");
-
     aiMessageInput =
         document.getElementById("messageInput");
 
@@ -26,7 +21,6 @@ function initializeAISuggestions() {
     if (
         !aiSuggestionsPanel ||
         !smartRepliesContainer ||
-        !predictiveSuggestionsContainer ||
         !aiMessageInput
     ) {
 
@@ -41,9 +35,6 @@ function initializeAISuggestions() {
     console.log(
         "✨ AI Suggestions initialized"
     );
-
-
-    setupPredictiveTyping();
 }
 
 // GET RECENT MESSAGES
@@ -65,7 +56,6 @@ function getRecentMessagesForAI() {
         .filter(Boolean);
 }
 
-
 // GET LAST INCOMING MESSAGE
 
 function getLastIncomingMessage() {
@@ -77,34 +67,47 @@ function getLastIncomingMessage() {
         return null;
     }
 
-    const all = Array.from(renderedMessages.values());
 
-    for (let i = all.length - 1; i >= 0; i--) {
+    const allMessages =
+        Array.from(
+            renderedMessages.values()
+        );
 
-        const message = all[i];
+
+    for (
+        let i = allMessages.length - 1;
+        i >= 0;
+        i--
+    ) {
+
+        const message =
+            allMessages[i];
+
 
         if (
             message &&
-            Number(message.senderId) !== Number(currentUser.userId) &&
+            Number(message.senderId) !==
+                Number(currentUser.userId) &&
             message.content
         ) {
-            return message.content;
+
+            return message;
         }
     }
 
+
     return null;
 }
+// SHOW SMART REPLIES FOR LATEST INCOMING MESSAGE
 
-
-// SMART REPLIES
-
-async function loadSmartReplies(incomingMessage) {
-
-    if (!currentRoom) {
-        return;
-    }
+async function loadSmartReplies(
+    incomingMessage = null,
+    messageId = null,
+    roomId = null
+) {
 
     if (
+        !currentRoom ||
         !aiSuggestionsPanel ||
         !smartRepliesContainer
     ) {
@@ -112,32 +115,69 @@ async function loadSmartReplies(incomingMessage) {
     }
 
 
-    const messageToReplyTo =
-        incomingMessage || getLastIncomingMessage();
+    let targetMessage;
 
 
-    if (!messageToReplyTo) {
+    if (incomingMessage) {
+
+        targetMessage = {
+            id: messageId,
+            roomId: roomId,
+            content: incomingMessage
+        };
+
+    } else {
+
+        targetMessage =
+            getLastIncomingMessage();
+    }
+
+
+    // Nothing to reply to.
+    if (
+        !targetMessage ||
+        !targetMessage.content
+    ) {
+
+        clearSmartReplies();
+
         return;
     }
+
+
+    // Make sure the message belongs
+    // to the currently open room.
+    if (
+        targetMessage.roomId &&
+        Number(targetMessage.roomId) !==
+            Number(currentRoom.id)
+    ) {
+
+        return;
+    }
+
+    const requestId =
+        ++smartReplyRequestId;
 
 
     const recentMessages =
         getRecentMessagesForAI();
 
 
+    // Show loading state.
+    aiSuggestionsPanel.classList.remove(
+        "hidden"
+    );
+
+
+    smartRepliesContainer.innerHTML = `
+        <div class="ai-loading">
+            ✨ Thinking...
+        </div>
+    `;
+
+
     try {
-
-        aiSuggestionsPanel.classList.remove(
-            "hidden"
-        );
-
-
-        smartRepliesContainer.innerHTML = `
-            <div class="ai-loading">
-                ✨ Thinking...
-            </div>
-        `;
-
 
         const response =
             await axios.post(
@@ -145,148 +185,11 @@ async function loadSmartReplies(incomingMessage) {
                 `${BASE_URL}/ai/smart-replies`,
 
                 {
-                    message: messageToReplyTo,
-                    recentMessages: recentMessages
-                },
-
-                {
-                    headers: {
-                        Authorization: token
-                    }
-                }
-            );
-
-
-        const suggestions =
-            response.data.suggestions || [];
-
-
-        smartRepliesContainer.innerHTML = "";
-
-
-        suggestions
-            .slice(0, 3)
-            .forEach(suggestion => {
-
-                const button =
-                    document.createElement("button");
-
-                button.className =
-                    "smart-reply-btn";
-
-                button.type = "button";
-
-                button.textContent =
-                    suggestion;
-
-
-                button.addEventListener(
-                    "click",
-                    () => {
-
-                        aiMessageInput.value =
-                            suggestion;
-
-                        aiMessageInput.focus();
-
-                    }
-                );
-
-
-                smartRepliesContainer.appendChild(
-                    button
-                );
-
-            });
-
-
-    } catch (error) {
-
-        console.error(
-            "❌ Smart replies failed:",
-            error
-        );
-
-        aiSuggestionsPanel.classList.add(
-            "hidden"
-        );
-    }
-}
-
-// PREDICTIVE TYPING
-
-let predictiveTimer;
-
-
-function setupPredictiveTyping() {
-
-    aiMessageInput.addEventListener(
-    "focus",
-        () => {
-
-            loadSmartReplies();
-
-        }
-    );
-
-    aiMessageInput.addEventListener(
-        "input",
-        () => {
-
-            clearTimeout(
-                predictiveTimer
-            );
-
-
-            const text =
-                aiMessageInput.value.trim();
-
-
-            if (!text) {
-
-                hidePredictiveSuggestions();
-
-                return;
-            }
-
-
-            predictiveTimer =
-                setTimeout(
-                    () => {
-
-                        loadPredictiveSuggestions(
-                            text
-                        );
-
-                    },
-                    700
-                );
-
-        }
-    );
-}
-
-// LOAD PREDICTIVE SUGGESTIONS
-
-async function loadPredictiveSuggestions(text) {
-
-    if (!currentRoom) {
-        return;
-    }
-
-
-    try {
-
-        const response =
-            await axios.post(
-
-                `${BASE_URL}/ai/predictive`,
-
-                {
-                    text: text,
+                    message:
+                        targetMessage.content,
 
                     recentMessages:
-                        getRecentMessagesForAI()
+                        recentMessages
                 },
 
                 {
@@ -297,47 +200,93 @@ async function loadPredictiveSuggestions(text) {
             );
 
 
+        if (
+            requestId !== smartReplyRequestId
+        ) {
+            return;
+        }
+
+        if (
+            !currentRoom ||
+            (
+                targetMessage.roomId &&
+                Number(targetMessage.roomId) !==
+                    Number(currentRoom.id)
+            )
+        ) {
+            return;
+        }
+
+
         const suggestions =
             response.data.suggestions || [];
 
 
-        renderPredictiveSuggestions(
+        renderSmartReplies(
             suggestions
         );
 
 
     } catch (error) {
 
+        // Ignore errors from outdated requests.
+        if (
+            requestId !== smartReplyRequestId
+        ) {
+            return;
+        }
+
+
         console.error(
-            "❌ Predictive suggestions failed:",
+            "❌ Smart replies failed:",
             error
         );
 
-        hidePredictiveSuggestions();
+
+        clearSmartReplies();
     }
 }
 
-// RENDER PREDICTIVE SUGGESTIONS
+// RENDER SMART REPLIES
 
-function renderPredictiveSuggestions(
+function renderSmartReplies(
     suggestions
 ) {
 
-    predictiveSuggestionsContainer.innerHTML =
+    smartRepliesContainer.innerHTML =
         "";
 
 
-    suggestions
-        .slice(0, 3)
-        .forEach(suggestion => {
+    const limitedSuggestions =
+        suggestions.slice(0, 3);
+
+
+    if (
+        limitedSuggestions.length === 0
+    ) {
+
+        clearSmartReplies();
+
+        return;
+    }
+
+
+    limitedSuggestions.forEach(
+        suggestion => {
 
             const button =
-                document.createElement("button");
+                document.createElement(
+                    "button"
+                );
+
 
             button.className =
-                "predictive-btn";
+                "smart-reply-btn";
 
-            button.type = "button";
+
+            button.type =
+                "button";
+
 
             button.textContent =
                 suggestion;
@@ -348,46 +297,64 @@ function renderPredictiveSuggestions(
                 () => {
 
                     aiMessageInput.value =
-                        aiMessageInput.value.trim() +
-                        " " +
                         suggestion;
 
                     aiMessageInput.focus();
 
-                    hidePredictiveSuggestions();
+                    // The suggestion has now been
+                    // selected. Don't keep showing
+                    // suggestions for the old message.
+                    clearSmartReplies();
 
                 }
             );
 
 
-            predictiveSuggestionsContainer
-                .appendChild(button);
+            smartRepliesContainer.appendChild(
+                button
+            );
 
-        });
+        }
+    );
+}
 
 
-    if (suggestions.length > 0) {
+// CLEAR SMART REPLIES
 
-        predictiveSuggestionsContainer
-            .classList
-            .remove("hidden");
+function clearSmartReplies() {
+
+    // Invalidate any currently running request.
+    smartReplyRequestId++;
+
+
+    if (
+        smartRepliesContainer
+    ) {
+
+        smartRepliesContainer.innerHTML =
+            "";
+
+    }
+
+
+    if (
+        aiSuggestionsPanel
+    ) {
+
+        aiSuggestionsPanel.classList.add(
+            "hidden"
+        );
 
     }
 }
 
-// HIDE PREDICTIVE SUGGESTIONS
+// CLEAR ALL AI UI
 
-function hidePredictiveSuggestions() {
+function clearAISuggestions() {
 
-    predictiveSuggestionsContainer.innerHTML =
-        "";
-
-    predictiveSuggestionsContainer
-        .classList
-        .add("hidden");
+    clearSmartReplies();
 }
-
-// INITIALIZE AFTER COMPONENTS LOAD from componentsLoader.js this listents for that that dispatch event
+// INITIALIZE AFTER COMPONENTS LOAD
 
 document.addEventListener(
     "chatAppComponentsLoaded",
