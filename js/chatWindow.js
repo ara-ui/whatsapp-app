@@ -41,6 +41,8 @@ async function openRoom(room) {
 
     clearPendingAttachment();
 
+    resetTypingState();
+    
     currentRoom = room;
 
     chatWindowEmptyState.classList.add("hidden");

@@ -153,6 +153,10 @@ async function initializeApplication() {
             "/js/chatScroll.js"
         );
 
+        // Presence / typing
+        await loadScript("/js/chatPresence.js");
+
+        
         // Message operations
         await loadScript(
             "/js/chatMessages.js"

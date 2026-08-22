@@ -83,6 +83,9 @@ function sendCurrentMessage() {
 
         return;
     }
+
+    stopTyping();
+
     if (
         typeof clearAISuggestions === "function"
     ) {
@@ -193,14 +196,37 @@ sendBtn.addEventListener(
 
 
 messageInput.addEventListener(
-    "keypress",
+    "keydown",
     (event) => {
 
         if (event.key === "Enter") {
 
+            event.preventDefault();
+            
             sendCurrentMessage();
 
         }
 
+    }
+);
+//typing indicator
+
+messageInput.addEventListener(
+    "input",
+    () => {
+
+        const content =
+            messageInput.value.trim();
+
+
+        if (!content) {
+
+            stopTyping();
+
+            return;
+        }
+
+
+        startTyping();
     }
 );

@@ -2,7 +2,7 @@ const { Server } = require("socket.io");
 
 const socketAuthentication = require("./middleware");
 const roomHandler = require("./handlers/room");
-
+const presenceHandler = require("./handlers/presence");
 
 
 const initializeSocket = (server) => {
@@ -29,6 +29,8 @@ const initializeSocket = (server) => {
 
 
          roomHandler(io, socket);
+
+         presenceHandler(io,socket);
 
        socket.on("disconnect", (reason) => {
             console.log(
