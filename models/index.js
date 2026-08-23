@@ -3,6 +3,7 @@ const Room = require("./Room");
 const RoomMember = require("./RoomMember");
 const Message = require("./Message");
 const MessageRecipient =require("./MessageRecipient");
+const ForgotPassword=require("./ForgotPassword");
 
 // Room <-> RoomMember (one room has many membership rows)
 Room.hasMany(RoomMember, {
@@ -81,10 +82,21 @@ MessageRecipient.belongsTo(User, {
     foreignKey: "recipientId",
     constraints: false
 });
+
+User.hasMany(ForgotPassword, {
+    foreignKey: "userId",
+    onDelete: "CASCADE"
+});
+
+ForgotPassword.belongsTo(User, {
+    foreignKey: "userId"
+});
+
 module.exports = {
     User,
     Room,
     RoomMember,
     Message,
-    MessageRecipient
+    MessageRecipient,
+    ForgotPassword
 };
