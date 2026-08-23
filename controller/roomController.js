@@ -89,30 +89,47 @@ exports.getRooms = async (req, res) => {
                 });
 
                 let displayName = room.name;
+                let otherUserId = null;
 
-                // Personal rooms have no name of their own —
-                // show the OTHER participant's name instead.
                 if (room.type === "personal") {
 
-                    const members = await RoomMember.findAll({
-                        where: { roomId: room.id },
-                        include: [{
-                            model: User,
-                            attributes: ["id", "name", "email"]
-                        }]
-                    });
+                const members = await RoomMember.findAll({
+                    where: {
+                        roomId: room.id
+                    },
+                    include: [{
+                        model: User,
+                        attributes: [
+                            "id",
+                            "name",
+                            "email"
+                        ]
+                    }]
+                });
 
-                    const otherMember = members
-                        .map((m) => m.User)
-                        .find((u) => u && u.id !== userId);
+                const otherMember = members
+                    .map((m) => m.User)
+                    .find(
+                        (u) =>
+                            u &&
+                            u.id !== userId
+                    );
 
-                    displayName = otherMember ? otherMember.name : "Unknown User";
+                if (otherMember) {
+
+                    displayName =
+                        otherMember.name;
+
+                    otherUserId =
+                        otherMember.id;
+
+                } else {
+
+                    displayName =
+                        "Unknown User";
                 }
+            }
 
-                // Unread badge: how many messages in this room are
-                // still waiting to be read BY the current user.
-                // (Community messages never get MessageRecipient rows,
-                // so this naturally comes back 0 for the community room.)
                 const unreadCount = await MessageRecipient.count({
                     where: {
                         recipientId: userId,
@@ -130,6 +147,7 @@ exports.getRooms = async (req, res) => {
                     id: room.id,
                     type: room.type,
                     name: displayName,
+                    otherUserId,
                     unreadCount,
                     lastMessage: lastMessage ? {
                         content: lastMessage.content,
@@ -155,16 +173,6 @@ exports.getRooms = async (req, res) => {
     }
 };
 
-
-// =========================================================
-// POST /rooms/personal
-// Body: { email }  -> email of the OTHER user
-//
-// Server-authoritative personal room creation: the client only
-// tells us WHO it wants to chat with. We look up (or create)
-// the room and hand back its real, server-assigned id. The
-// frontend never computes or sends a room id itself.
-// =========================================================
 exports.createOrGetPersonalRoom = async (req, res) => {
     try {
         const currentUserId = req.user.id;
@@ -212,7 +220,8 @@ exports.createOrGetPersonalRoom = async (req, res) => {
             room: {
                 id: room.id,
                 type: room.type,
-                name: otherUser.name
+                name: otherUser.name,
+                otherUserId: otherUser.id
             }
         });
 

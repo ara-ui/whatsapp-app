@@ -45,6 +45,8 @@ async function openRoom(room) {
     
     currentRoom = room;
 
+    requestPresenceStatus();
+
     chatWindowEmptyState.classList.add("hidden");
     chatWindowActive.classList.remove("hidden");
     chatWindowPanel.classList.add("mobile-visible");
@@ -56,11 +58,11 @@ async function openRoom(room) {
         room.name || "Unnamed";
 
     chatWindowSubtitle.textContent =
-        room.type === "community"
-            ? "Everyone can chat here"
-            : room.type === "group"
-                ? "Group chat"
-                : "";
+    room.type === "community"
+        ? "Everyone can chat here"
+        : room.type === "group"
+            ? "Group chat"
+            : "Checking status...";
 
     messagesContainer.innerHTML =
         `<div class="empty-state">

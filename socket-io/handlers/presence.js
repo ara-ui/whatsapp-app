@@ -2,6 +2,7 @@ const {
     getAllRoomIdsForUser
 } = require("../../utils/roomAuthorization");
 
+const User = require("../../models/User");
 
 const onlineUsers = new Map();
 
@@ -15,30 +16,43 @@ function presenceHandler(io, socket) {
     const userName =
         socket.user.name;
 
-
-    // USER CONNECTED
+     // USER CONNECTED
     
-    if (!onlineUsers.has(userId)) {
+    let userSockets =
+        onlineUsers.get(userId);
+
+    const wasOffline =
+        !userSockets ||
+        userSockets.size === 0;
+
+
+    if (!userSockets) {
+
+        userSockets = new Set();
 
         onlineUsers.set(
             userId,
-            new Set()
+            userSockets
         );
     }
 
 
-    onlineUsers
-        .get(userId)
-        .add(socket.id);
-
-   // NOTIFY ROOMS THAT USER IS ONLINE
-    
-    notifyUserOnline(
-        io,
-        userId
+    userSockets.add(
+        socket.id
     );
 
-   // TYPING START
+
+    // User changed from offline → online.
+    if (wasOffline) {
+
+        notifyUserOnline(
+            io,
+            userId
+        );
+    }
+
+
+      // TYPING START
     
     socket.on(
         "typing:start",
@@ -54,8 +68,8 @@ function presenceHandler(io, socket) {
 
 
             // Security:
-            // Make sure this socket actually
-            // belongs to this room.
+            // Make sure this socket has
+            // actually joined this room.
             if (
                 !socket.rooms.has(
                     roomIdString
@@ -65,18 +79,20 @@ function presenceHandler(io, socket) {
             }
 
 
-            socket.to(roomIdString).emit(
-                "typing:start",
-                {
-                    userId,
-                    userName
-                }
-            );
+            socket
+                .to(roomIdString)
+                .emit(
+                    "typing:start",
+                    {
+                        userId,
+                        userName
+                    }
+                );
         }
     );
 
-   // TYPING STOP
-  
+      // TYPING STOP
+   
     socket.on(
         "typing:stop",
         ({ roomId }) => {
@@ -99,20 +115,102 @@ function presenceHandler(io, socket) {
             }
 
 
-            socket.to(roomIdString).emit(
-                "typing:stop",
-                {
-                    userId
+            socket
+                .to(roomIdString)
+                .emit(
+                    "typing:stop",
+                    {
+                        userId
+                    }
+                );
+        }
+    );
+   // GET USER PRESENCE STATUS
+
+    socket.on(
+        "presence:getStatus",
+        async ({ userId }) => {
+
+            try {
+
+                const targetUserId =
+                    Number(userId);
+
+                if (!targetUserId) {
+                    return;
                 }
-            );
+
+
+                // Check whether the user currently
+                // has at least one active socket.
+                const userSockets =
+                    onlineUsers.get(
+                        targetUserId
+                    );
+
+
+                const isOnline =
+                    userSockets &&
+                    userSockets.size > 0;
+
+
+                // User is currently online.
+                if (isOnline) {
+
+                    socket.emit(
+                        "presence:status",
+                        {
+                            userId: targetUserId,
+                            online: true,
+                            lastSeenAt: null
+                        }
+                    );
+
+                    return;
+                }
+
+               const user =
+                    await User.findByPk(
+                        targetUserId,
+                        {
+                            attributes: [
+                                "id",
+                                "lastSeenAt"
+                            ]
+                        }
+                    );
+
+
+                if (!user) {
+                    return;
+                }
+
+
+                socket.emit(
+                    "presence:status",
+                    {
+                        userId: targetUserId,
+                        online: false,
+                        lastSeenAt:
+                            user.lastSeenAt
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Failed to get presence status:",
+                    error
+                );
+            }
         }
     );
 
-    // DISCONNECT
-    
+     // DISCONNECT
+   
     socket.on(
         "disconnect",
-        () => {
+        async () => {
 
             const userSockets =
                 onlineUsers.get(userId);
@@ -123,29 +221,60 @@ function presenceHandler(io, socket) {
             }
 
 
+            // Remove this particular
+            // socket connection.
             userSockets.delete(
                 socket.id
             );
 
 
             // User still has another
-            // active browser/device connection.
+            // active tab/device.
             if (
                 userSockets.size > 0
             ) {
                 return;
             }
 
-
-            // User is completely offline.
+            // USER IS COMPLETELY OFFLINE
+          
             onlineUsers.delete(
                 userId
             );
 
 
+            const lastSeenAt =
+                new Date();
+
+
+            // Save last seen time.
+            try {
+
+                await User.update(
+                    {
+                        lastSeenAt
+                    },
+                    {
+                        where: {
+                            id: userId
+                        }
+                    }
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "❌ Failed to save last seen:",
+                    error
+                );
+            }
+
+
+            // Tell other users.
             notifyUserOffline(
                 io,
-                userId
+                userId,
+                lastSeenAt
             );
         }
     );
@@ -193,7 +322,8 @@ async function notifyUserOnline(
 
 async function notifyUserOffline(
     io,
-    userId
+    userId,
+    lastSeenAt
 ) {
 
     try {
@@ -212,7 +342,8 @@ async function notifyUserOffline(
                 ).emit(
                     "presence:userOffline",
                     {
-                        userId
+                        userId,
+                        lastSeenAt
                     }
                 );
             }

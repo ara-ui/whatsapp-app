@@ -177,7 +177,7 @@ async function uploadSelectedFile() {
                 messagesContainer
             );
 
-            scrollToBottom();
+            scrollToLatest();
         }
 
 

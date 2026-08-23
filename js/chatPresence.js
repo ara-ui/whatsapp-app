@@ -139,6 +139,7 @@ function restoreRoomSubtitle() {
     }
 
 
+    // Community
     if (
         currentRoom.type === "community"
     ) {
@@ -150,6 +151,7 @@ function restoreRoomSubtitle() {
     }
 
 
+    // Group
     if (
         currentRoom.type === "group"
     ) {
@@ -161,6 +163,241 @@ function restoreRoomSubtitle() {
     }
 
 
-    chatWindowSubtitle.textContent =
-        "";
+    requestPresenceStatus();
 }
+
+// REQUEST CURRENT USER PRESENCE
+
+function requestPresenceStatus() {
+
+    if (!currentRoom || !socket) {
+        return;
+    }
+
+    // Presence is currently handled
+    // only for personal chats.
+    if (
+        currentRoom.type !== "personal"
+    ) {
+        return;
+    }
+
+    if (!currentRoom.otherUserId) {
+        return;
+    }
+
+    socket.emit(
+        "presence:getStatus",
+        {
+            userId:
+                currentRoom.otherUserId
+        }
+    );
+}
+
+// RECEIVE CURRENT USER PRESENCE
+
+socket.on(
+    "presence:status",
+    ({
+        userId,
+        online,
+        lastSeenAt
+    }) => {
+
+        if (!currentRoom) {
+            return;
+        }
+
+        // Ignore status belonging
+        // to another user.
+        if (
+            Number(userId) !==
+            Number(currentRoom.otherUserId)
+        ) {
+            return;
+        }
+
+
+        if (online) {
+
+            chatWindowSubtitle.textContent =
+                "Online";
+
+            return;
+        }
+
+
+        if (lastSeenAt) {
+
+            chatWindowSubtitle.textContent =
+                formatLastSeen(
+                    lastSeenAt
+                );
+
+            return;
+        }
+
+
+        chatWindowSubtitle.textContent =
+            "Offline";
+    }
+);
+
+// FORMAT LAST SEEN
+
+function formatLastSeen(
+    lastSeenAt
+) {
+
+    const date =
+        new Date(lastSeenAt);
+
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
+        return "Offline";
+    }
+
+
+    const now =
+        new Date();
+
+
+    const isToday =
+        date.toDateString() ===
+        now.toDateString();
+
+
+    if (isToday) {
+
+        return (
+            "last seen today at " +
+            date.toLocaleTimeString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            )
+        );
+    }
+
+
+    const yesterday =
+        new Date(now);
+
+    yesterday.setDate(
+        now.getDate() - 1
+    );
+
+
+    if (
+        date.toDateString() ===
+        yesterday.toDateString()
+    ) {
+
+        return (
+            "last seen yesterday at " +
+            date.toLocaleTimeString(
+                [],
+                {
+                    hour: "2-digit",
+                    minute: "2-digit"
+                }
+            )
+        );
+    }
+
+
+    return (
+        "last seen " +
+        date.toLocaleDateString(
+            [],
+            {
+                day: "numeric",
+                month: "short"
+            }
+        ) +
+        " at " +
+        date.toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        )
+    );
+}
+
+// other USER CAME ONLINE
+
+socket.on(
+    "presence:userOnline",
+    ({ userId }) => {
+
+        if (!currentRoom) {
+            return;
+        }
+
+        if (
+            currentRoom.type !== "personal"
+        ) {
+            return;
+        }
+
+        if (
+            Number(userId) !==
+            Number(currentRoom.otherUserId)
+        ) {
+            return;
+        }
+
+        chatWindowSubtitle.textContent =
+            "Online";
+    }
+);
+
+// other USER WENT OFFLINE
+
+socket.on(
+    "presence:userOffline",
+    ({
+        userId,
+        lastSeenAt
+    }) => {
+
+        if (!currentRoom) {
+            return;
+        }
+
+        if (
+            currentRoom.type !== "personal"
+        ) {
+            return;
+        }
+
+        if (
+            Number(userId) !==
+            Number(currentRoom.otherUserId)
+        ) {
+            return;
+        }
+
+
+        if (lastSeenAt) {
+
+            chatWindowSubtitle.textContent =
+                formatLastSeen(
+                    lastSeenAt
+                );
+
+        } else {
+
+            chatWindowSubtitle.textContent =
+                "Offline";
+        }
+    }
+);

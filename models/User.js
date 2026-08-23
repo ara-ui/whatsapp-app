@@ -25,6 +25,10 @@ const User=db.define("User",{
     password:{
         type:DataTypes.STRING,
         allowNull:false
+    },
+    lastSeenAt: {
+    type: DataTypes.DATE,
+    allowNull: true
     }
 
 });
