@@ -2,7 +2,7 @@ const { Server } = require("socket.io");
 
 const socketAuthentication = require("./middleware");
 const roomHandler = require("./handlers/room");
-const presenceHandler = require("./handlers/presence");
+const {presenceHandler} = require("./handlers/presence");
 
 
 const initializeSocket = (server) => {

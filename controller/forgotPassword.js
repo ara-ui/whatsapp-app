@@ -1,6 +1,6 @@
-const User = require("../model/User");
+const User = require("../models/User");
 const mailService = require("../services/mailService");
-const ForgotPasswordRequest = require("../model/ForgotPassword");
+const ForgotPasswordRequest = require("../models/ForgotPassword");
 
 const bcrypt = require("bcrypt");
 

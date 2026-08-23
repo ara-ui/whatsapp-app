@@ -56,3 +56,6 @@ const sendMail = async (receiverEmail, id) => {
         throw err;   // Let the controller know the mail failed
     }
 };
+module.exports = {
+    sendMail
+};
