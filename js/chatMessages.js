@@ -1,5 +1,17 @@
 // CHAT MESSAGES
 
+function markMessageAsRead(messageId) {
+
+    if (!messageId) {
+        return;
+    }
+
+    socket.emit("room:markRead", {
+        messageId
+    });
+}
+
+
 async function loadMessageHistory(roomId) {
 
     try {
@@ -15,6 +27,17 @@ async function loadMessageHistory(roomId) {
 
         const messages =
             response.data.messages || [];
+
+        messages.forEach(message => {
+
+            if (
+                Number(message.senderId) !==
+                Number(currentUser.userId)
+            ) {
+                markMessageAsRead(message.id);
+            }
+
+        });
 
 
         // Render message history
@@ -158,18 +181,13 @@ socket.on("room:message", (msg) => {
         );
     }
 
- // READ RECEIPT
+   // READ RECEIPT
   
-    if (
-        Number(msg.senderId) !== Number(currentUser.userId)
+   if (
+    Number(msg.senderId) !==
+    Number(currentUser.userId)
     ) {
-
-        socket.emit(
-            "room:markRead",
-            {
-                messageId: msg.id
-            }
-        );
+        markMessageAsRead(msg.id);
     }
 
 });

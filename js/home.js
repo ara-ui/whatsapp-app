@@ -37,6 +37,12 @@ function formatTime(dateString) {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
+function formatLastMessagePreview(lastMessage) {
+    if (lastMessage.messageType === "image") return "📷 Photo";
+    if (lastMessage.messageType === "video") return "🎥 Video";
+    if (lastMessage.messageType === "file") return "📄 " + (lastMessage.fileName || "File");
+    return lastMessage.content || "";
+}
 
 function escapeHtml(str) {
     const div = document.createElement("div");
@@ -99,7 +105,7 @@ function renderRoomList(rooms) {
         const preview = hasUnread
             ? (unreadCount === 1 ? "New message" : "New messages")
             : room.lastMessage
-                ? (room.lastMessage.senderId === currentUser.userId ? "You: " : "") + room.lastMessage.content
+                ? (room.lastMessage.senderId === currentUser.userId ? "You: " : "") + formatLastMessagePreview(room.lastMessage)
                 : "No messages yet";
 
         const time = room.lastMessage ? formatTime(room.lastMessage.createdAt) : "";

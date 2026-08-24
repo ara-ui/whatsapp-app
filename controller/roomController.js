@@ -151,6 +151,8 @@ exports.getRooms = async (req, res) => {
                     unreadCount,
                     lastMessage: lastMessage ? {
                         content: lastMessage.content,
+                        messageType: lastMessage.messageType,
+                        fileName: lastMessage.fileName,
                         senderId: lastMessage.senderId,
                         senderName: lastMessage.Sender ? lastMessage.Sender.name : null,
                         createdAt: lastMessage.createdAt
