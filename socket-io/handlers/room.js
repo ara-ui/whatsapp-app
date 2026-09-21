@@ -16,6 +16,8 @@ const {
     isAuthorizedForRoom,
     getAllRoomIdsForUser
 } = require("../../utils/roomAuthorization");
+const { areUsersConnected } = require("../../utils/connection");
+const RoomMember = require("../../models/RoomMember");
 
 async function broadcastMessageStatus(io, messageId) {
 
@@ -220,6 +222,27 @@ const roomHandler = (io, socket) => {
                 });
 
                 return;
+            }
+
+            if (room.type === "personal") {
+                const members = await RoomMember.findAll({
+                    where: { roomId: room.id },
+                    attributes: ["userId"]
+                });
+
+                const otherMember = members.find(
+                    member => Number(member.userId) !== Number(socket.user.userId)
+                );
+
+                if (!otherMember || !(await areUsersConnected(
+                    socket.user.userId,
+                    otherMember.userId
+                ))) {
+                    socket.emit("room:error", {
+                        message: "You must be connected to this user to send messages"
+                    });
+                    return;
+                }
             }
 
 

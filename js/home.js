@@ -9,10 +9,6 @@ const menuBtn = document.getElementById("menuBtn");
 const menuDropdown = document.getElementById("menuDropdown");
 const logoutBtn = document.getElementById("logoutBtn");
 
-const startChatModal = document.getElementById("startChatModal");
-const startChatEmailInput = document.getElementById("startChatEmailInput");
-const startChatSubmitBtn = document.getElementById("startChatSubmitBtn");
-const startChatCancelBtn = document.getElementById("startChatCancelBtn");
 
 const createGroupModal = document.getElementById("createGroupModal");
 const groupNameInput = document.getElementById("groupNameInput");
@@ -141,54 +137,12 @@ searchInput.addEventListener("input", applySearchFilter);
 
 
 // ---------------------------------------------------------
-// Start personal chat
+// Connections
 // ---------------------------------------------------------
 
 newChatBtn.addEventListener("click", () => {
-    startChatEmailInput.value = "";
-    startChatModal.classList.remove("hidden");
-    startChatEmailInput.focus();
+    document.dispatchEvent(new CustomEvent("chatOpenConnections"));
 });
-
-startChatCancelBtn.addEventListener("click", () => {
-    startChatModal.classList.add("hidden");
-});
-
-startChatSubmitBtn.addEventListener("click", async () => {
-    const email = startChatEmailInput.value.trim();
-
-    if (!email) {
-        alert("Please enter an email");
-        return;
-    }
-
-    try {
-        const response = await axios.post(
-            `${BASE_URL}/rooms/personal`,
-            { email },
-            { headers: { Authorization: token } }
-        );
-
-        startChatModal.classList.add("hidden");
-
-        const room = response.data.room;
-
-        await loadRooms();
-        openRoom(room);
-
-    } catch (err) {
-        console.log(err);
-
-        if (err.response && err.response.status === 404) {
-            alert("No user found with that email");
-        } else if (err.response && err.response.data && err.response.data.message) {
-            alert(err.response.data.message);
-        } else {
-            alert("Something went wrong");
-        }
-    }
-});
-
 
 // ---------------------------------------------------------
 // Create group

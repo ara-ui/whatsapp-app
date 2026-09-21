@@ -74,13 +74,13 @@ async function loadComponents() {
     );
 
     await loadComponent(
-        "personalChatModal",
-        "/components/personalChatModal.html"
+        "groupChatModal",
+        "/components/groupChatModal.html"
     );
 
     await loadComponent(
-        "groupChatModal",
-        "/components/groupChatModal.html"
+        "connectionModalContainer",
+        "/components/connectionModal.html"
     );
 
     console.log("✅ UI components finished loading");
@@ -139,6 +139,10 @@ async function initializeApplication() {
         // Chat list / sidebar
         await loadScript(
             "/js/home.js"
+        );
+
+        await loadScript(
+            "/js/connections.js"
         );
 
         await loadScript("/js/chatState.js");

@@ -20,6 +20,7 @@ const messageRoutes=require('./routes/messageRoutes');
 const mediaRoutes=require('./routes/mediaRoutes');
 const aiRoutes = require("./routes/aiRoutes");
 const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
+const connectionRoutes = require("./routes/connectionRoutes");
 
 const app=express();
 const server=http.createServer(app);
@@ -48,6 +49,7 @@ app.use("/rooms",messageRoutes);
 app.use("/media",mediaRoutes);
 app.use("/ai", aiRoutes);
 app.use("/password",forgotPasswordRoutes);
+app.use("/connections", connectionRoutes);
 
 
 //home page

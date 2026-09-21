@@ -113,3 +113,52 @@ test("delete-for-everyone is offered only for messages owned by the current user
   assert.match(renderer, /isMine\s*\n?\s*\? `[^`]*data-delete-everyone-message-id/s);
   assert.match(renderer, /Delete for everyone/);
 });
+
+test("connection model stores one normalized relationship with request status", () => {
+  const model = read("models/Connection.js");
+  const util = read("utils/connection.js");
+  assert.match(model, /userAId/);
+  assert.match(model, /userBId/);
+  assert.match(model, /requestedById/);
+  assert.match(model, /pending/);
+  assert.match(model, /accepted/);
+  assert.match(model, /rejected/);
+  assert.match(model, /unique: true/);
+  assert.match(util, /normalizePair/);
+});
+
+test("connection routes expose request, pending, accept, reject, and connected-user operations", () => {
+  const routes = read("routes/connectionRoutes.js");
+  assert.match(routes, /\/request/);
+  assert.match(routes, /\/pending/);
+  assert.match(routes, /\/accept/);
+  assert.match(routes, /\/reject/);
+  assert.match(routes, /getConnectedUsers/);
+  assert.match(routes, /router\.use\(authenticate\)/);
+});
+
+test("personal rooms require an accepted connection", () => {
+  const controller = read("controller/roomController.js");
+  assert.match(controller, /areUsersConnected/);
+  assert.match(controller, /only start a personal chat with a connected user/);
+});
+
+test("text and media personal messaging enforce connection state", () => {
+  const socket = read("socket-io/handlers/room.js");
+  const media = read("controller/mediaController.js");
+  assert.match(socket, /areUsersConnected/);
+  assert.match(socket, /must be connected to this user to send messages/);
+  assert.match(media, /areUsersConnected/);
+  assert.match(media, /must be connected to this user to send messages/);
+});
+
+test("connection UI supports pending requests and connected users", () => {
+  const component = read("public/components/connectionModal.html");
+  const script = read("js/connections.js");
+  assert.match(component, /Pending requests/);
+  assert.match(component, /Connected users/);
+  assert.match(script, /connection:request/);
+  assert.match(script, /connection:accepted/);
+  assert.match(script, /accept/);
+  assert.match(script, /reject/);
+});

@@ -13,6 +13,8 @@ const Message = require("../models/Message");
 const { getDeletedMessageIdsForUser } = require("../utils/messageDeletion");
 
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
+const RoomMember = require("../models/RoomMember");
+const { areUsersConnected } = require("../utils/connection");
 const {
     createRecipientRows,
     markDelivered,
@@ -96,6 +98,26 @@ exports.uploadMedia = (req, res) => {
                     success: false,
                     message: "You are not a member of this room"
                 });
+            }
+
+            if (room.type === "personal") {
+                const members = await RoomMember.findAll({
+                    where: { roomId: room.id },
+                    attributes: ["userId"]
+                });
+                const otherMember = members.find(
+                    member => Number(member.userId) !== Number(currentUserId)
+                );
+
+                if (!otherMember || !(await areUsersConnected(
+                    currentUserId,
+                    otherMember.userId
+                ))) {
+                    return res.status(403).json({
+                        success: false,
+                        message: "You must be connected to this user to send messages"
+                    });
+                }
             }
 
             const messageType = getMessageTypeFromMime(file.mimetype);

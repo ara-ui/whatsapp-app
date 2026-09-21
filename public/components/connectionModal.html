@@ -1,0 +1,32 @@
+<div class="modal-overlay hidden" id="connectionModal">
+    <div class="modal connection-modal">
+        <div class="connection-modal-header">
+            <div>
+                <h3>Connections</h3>
+                <p class="modal-hint">Connect with someone before starting a private chat.</p>
+            </div>
+            <button type="button" id="connectionModalCloseBtn" class="modal-close-btn" aria-label="Close">×</button>
+        </div>
+
+        <div class="connection-request-form">
+            <input type="email" id="connectionEmailInput" placeholder="Enter user's email">
+            <button type="button" id="sendConnectionRequestBtn" class="btn-primary">Send request</button>
+        </div>
+
+        <div id="connectionFeedback" class="connection-feedback hidden"></div>
+
+        <div class="connection-section">
+            <h4>Pending requests</h4>
+            <div id="pendingConnections" class="connection-list">
+                <div class="empty-state">Loading…</div>
+            </div>
+        </div>
+
+        <div class="connection-section">
+            <h4>Connected users</h4>
+            <div id="connectedUsers" class="connection-list">
+                <div class="empty-state">Loading…</div>
+            </div>
+        </div>
+    </div>
+</div>

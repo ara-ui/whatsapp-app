@@ -4,7 +4,16 @@ const RoomMember = require("./RoomMember");
 const Message = require("./Message");
 const MessageRecipient =require("./MessageRecipient");
 const MessageDeletion = require("./MessageDeletion");
+const Connection = require("./Connection");
 const ForgotPassword=require("./ForgotPassword");
+
+// User <-> Connection. Connections store an ordered user pair so the same
+// relationship cannot be represented by both (A,B) and (B,A).
+User.hasMany(Connection, { foreignKey: "userAId", onDelete: "CASCADE" });
+User.hasMany(Connection, { foreignKey: "userBId", onDelete: "CASCADE" });
+Connection.belongsTo(User, { foreignKey: "userAId", as: "UserA" });
+Connection.belongsTo(User, { foreignKey: "userBId", as: "UserB" });
+Connection.belongsTo(User, { foreignKey: "requestedById", as: "Requester" });
 
 // Room <-> RoomMember (one room has many membership rows)
 Room.hasMany(RoomMember, {
@@ -122,5 +131,6 @@ module.exports = {
     Message,
     MessageRecipient,
     MessageDeletion,
+    Connection,
     ForgotPassword
 };

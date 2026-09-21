@@ -21,12 +21,7 @@ const initializeSocket = (server) => {
     // Socket connection
     io.on("connection", (socket) => {
 
-        console.log(
-            "Authenticated user connected:",
-            socket.user.userId,
-            socket.user.name
-        );
-
+        socket.join(`user:${socket.user.userId}`);
 
          roomHandler(io, socket);
 

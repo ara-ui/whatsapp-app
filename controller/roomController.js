@@ -5,6 +5,7 @@ const RoomMember = require("../models/RoomMember");
 const Message = require("../models/Message");
 const User = require("../models/User");
 const MessageRecipient = require("../models/MessageRecipient");
+const { areUsersConnected } = require("../utils/connection");
 
 
 // first time it's needed. There is only ever one of these.
@@ -200,6 +201,14 @@ exports.createOrGetPersonalRoom = async (req, res) => {
             return res.status(400).json({
                 success: false,
                 message: "Cannot start a personal chat with yourself"
+            });
+        }
+
+        const connected = await areUsersConnected(currentUserId, otherUser.id);
+        if (!connected) {
+            return res.status(403).json({
+                success: false,
+                message: "You can only start a personal chat with a connected user"
             });
         }
 
