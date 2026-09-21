@@ -1,7 +1,6 @@
 const Room = require("../../models/Room");
 const Message = require("../../models/Message");
 const User = require("../../models/User");
-const RoomMember = require("../../models/RoomMember");
 
 const {
     createRecipientRows,
@@ -9,7 +8,8 @@ const {
     markRead,
     markAllDeliveredForUser,
     markAllReadForRoom,
-    getMessageStatus
+    getMessageStatus,
+    getRecipientIdsForRoom
 } = require("../../utils/messageStatus");
 
 const {
@@ -241,32 +241,7 @@ const roomHandler = (io, socket) => {
 
              // CREATE DELIVERY / READ TRACKING
            
-            let recipientIds = [];
-
-            if (room.type === "community") {
-
-                const users = await User.findAll({
-                    attributes: ["id"]
-                });
-
-                recipientIds = users.map(
-                    user => user.id
-                );
-
-            } else {
-
-                const members = await RoomMember.findAll({
-                    where: {
-                        roomId: room.id
-                    },
-
-                    attributes: ["userId"]
-                });
-
-                recipientIds = members.map(
-                    member => member.userId
-                );
-            }
+            const recipientIds = await getRecipientIdsForRoom(room);
 
             await createRecipientRows(
                 message,

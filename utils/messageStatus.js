@@ -242,11 +242,29 @@ async function getMessageStatus(
 }
 
 
+async function getRecipientIdsForRoom(room) {
+    const RoomMember = require("../models/RoomMember");
+    const User = require("../models/User");
+
+    if (room.type === "community") {
+        const users = await User.findAll({ attributes: ["id"] });
+        return users.map(user => user.id);
+    }
+
+    const members = await RoomMember.findAll({
+        where: { roomId: room.id },
+        attributes: ["userId"]
+    });
+
+    return members.map(member => member.userId);
+}
+
 module.exports = {
     createRecipientRows,
     markDelivered,
     markRead,
     markAllDeliveredForUser,
     markAllReadForRoom,
-    getMessageStatus
+    getMessageStatus,
+    getRecipientIdsForRoom
 };

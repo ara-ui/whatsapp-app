@@ -22,8 +22,8 @@ exports.forgotPassword = async (req, res) => {
         });
 
         if (!user) {
-            return res.status(404).json({
-                message: "User not found"
+            return res.status(200).json({
+                message: "If the account exists, a password reset link has been sent."
             });
         }
 
@@ -98,7 +98,7 @@ exports.resetPassword = async (req, res) => {
         }
 
         res.sendFile(
-            require("path").join(__dirname, "../public/resetpassword.html")
+            require("path").join(__dirname, "../public/resetPassword.html")
         );
 
     }

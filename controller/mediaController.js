@@ -12,6 +12,12 @@ const Room = require("../models/Room");
 const Message = require("../models/Message");
 
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
+const {
+    createRecipientRows,
+    markDelivered,
+    getMessageStatus,
+    getRecipientIdsForRoom
+} = require("../utils/messageStatus");
 
 const {
     ALLOWED_MIME_TYPES,
@@ -132,6 +138,40 @@ exports.uploadMedia = (req, res) => {
                 mimeType: file.mimetype
             });
 
+            // Media messages use the same recipient/status pipeline as text messages.
+            const recipientIds = await getRecipientIdsForRoom(room);
+            await createRecipientRows(message, recipientIds);
+
+            const io = req.app.get("io");
+
+            const socketsInRoom = io
+                ? (io.sockets.adapter.rooms.get(String(room.id)) || new Set())
+                : new Set();
+
+            const onlineUserIds = new Set();
+
+            socketsInRoom.forEach(socketId => {
+                const memberSocket = io.sockets.sockets.get(socketId);
+                if (
+                    memberSocket?.user &&
+                    Number(memberSocket.user.userId) !== Number(currentUserId)
+                ) {
+                    onlineUserIds.add(Number(memberSocket.user.userId));
+                }
+            });
+
+            await Promise.all(
+                [...onlineUserIds].map(userId =>
+                    markDelivered(message.id, userId)
+                )
+            );
+
+            const initialStatus = await getMessageStatus(
+                message.id,
+                currentUserId,
+                room.type
+            );
+
             const payload = {
                 id: message.id,
                 roomId: room.id,
@@ -140,12 +180,12 @@ exports.uploadMedia = (req, res) => {
                 messageType: message.messageType,
                 content: null,
                 mediaUrl,
+                mediaKey: message.mediaKey,
                 fileName: message.fileName,
                 mimeType: message.mimeType,
-                createdAt: message.createdAt
+                createdAt: message.createdAt,
+                status: initialStatus
             };
-
-             const io = req.app.get("io");
 
             if (io) {
                 io.to(String(room.id)).emit("room:message", payload);

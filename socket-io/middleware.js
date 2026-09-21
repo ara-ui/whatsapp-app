@@ -15,7 +15,7 @@ const socketAuthentication = (socket, next) => {
 
         socket.user = decoded;
 
-        console.log("Socket authenticated:", decoded);
+        console.log("Socket authenticated for user:", decoded.userId);
         
         next();
 

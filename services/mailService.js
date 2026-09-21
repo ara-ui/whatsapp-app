@@ -12,6 +12,11 @@ const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const sendMail = async (receiverEmail, id) => {
     try {
+        const appUrl = process.env.APP_URL;
+
+        if (!appUrl) {
+            throw new Error("APP_URL is not configured");
+        }
 
         const response = await tranEmailApi.sendTransacEmail({
 
@@ -32,14 +37,13 @@ const sendMail = async (receiverEmail, id) => {
                 <h2>Chat application</h2>
                 <p>Click the button below to reset your password.</p>
 
-                <a href="http://localhost:3000/password/resetpassword/${id}">
+                <a href="${appUrl}/password/resetpassword/${id}">
                     Reset Password
                 </a>
             `
         });
 
         console.log("Mail sent successfully");
-        console.log(response);
 
         return response;
 

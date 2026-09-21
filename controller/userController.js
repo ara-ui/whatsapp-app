@@ -48,7 +48,7 @@ const createUser = async (req, res) => {
             }
         });
 
-        console.log("Existing user:", existingUser);
+        console.log("Existing user found");
 
 
         // If user already exists
@@ -128,7 +128,7 @@ const loginUser = async (req, res) => {
         });
 
 
-        console.log("Login user:", user);
+        console.log("Login successful for user:", user.id);
 
 
         // User doesn't exist

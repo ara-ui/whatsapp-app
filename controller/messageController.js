@@ -1,5 +1,6 @@
 const Room = require("../models/Room");
 const Message = require("../models/Message");
+const ArchivedMessage = require("../models/ArchivedMessage");
 const User = require("../models/User");
 
 const { GetObjectCommand } = require("@aws-sdk/client-s3");
@@ -40,15 +41,51 @@ exports.getRoomMessages = async (req, res) => {
             });
         }
 
-        const messages = await Message.findAll({
-            where: { roomId: room.id },
-            order: [["createdAt", "ASC"]],
-            include: [{
-                model: User,
-                as: "Sender",
-                attributes: ["id", "name"]
-            }]
+        const [liveMessages, archivedMessages] = await Promise.all([
+            Message.findAll({
+                where: { roomId: room.id },
+                include: [{
+                    model: User,
+                    as: "Sender",
+                    attributes: ["id", "name"]
+                }]
+            }),
+            ArchivedMessage.findAll({
+                where: { roomId: room.id }
+            })
+        ]);
+
+        // Archived rows intentionally keep the original message id.
+        // De-duplicate by id so an edge case cannot show the same message twice.
+        const byId = new Map();
+        liveMessages.forEach(message => byId.set(String(message.id), message));
+        archivedMessages.forEach(message => {
+            if (!byId.has(String(message.id))) {
+                byId.set(String(message.id), message);
+            }
         });
+
+        const messages = [...byId.values()].sort(
+            (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
+        );
+
+        const archivedSenderIds = [...new Set(
+            messages
+                .filter(message => !message.Sender)
+                .map(message => Number(message.senderId))
+                .filter(Boolean)
+        )];
+
+        const archivedSenders = archivedSenderIds.length
+            ? await User.findAll({
+                where: { id: archivedSenderIds },
+                attributes: ["id", "name"]
+            })
+            : [];
+
+        const senderNames = new Map(
+            archivedSenders.map(sender => [Number(sender.id), sender.name])
+        );
 
         const formatted = await Promise.all(
             messages.map(async (m) => {
@@ -89,7 +126,9 @@ exports.getRoomMessages = async (req, res) => {
                     id: m.id,
                     roomId: m.roomId,
                     senderId: m.senderId,
-                    senderName: m.Sender ? m.Sender.name : null,
+                    senderName: m.Sender
+                        ? m.Sender.name
+                        : senderNames.get(Number(m.senderId)) || null,
                     messageType: m.messageType,
                     content: m.content,
                     mediaUrl,
