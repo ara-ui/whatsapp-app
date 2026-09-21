@@ -143,8 +143,23 @@ function createMessageElement(msg) {
                 aria-label="Delete message for me"
                 title="Delete for me"
             >
-                Delete
+                Delete for me
             </button>
+            ${
+                isMine
+                    ? `
+                        <button
+                            type="button"
+                            class="message-delete-btn message-delete-everyone-btn"
+                            data-delete-everyone-message-id="${messageId}"
+                            aria-label="Delete message for everyone"
+                            title="Delete for everyone"
+                        >
+                            Delete for everyone
+                        </button>
+                    `
+                    : ""
+            }
         </div>
     `;
 

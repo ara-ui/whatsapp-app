@@ -2,8 +2,11 @@ const Room = require("../models/Room");
 const Message = require("../models/Message");
 const ArchivedMessage = require("../models/ArchivedMessage");
 const User = require("../models/User");
+const MessageRecipient = require("../models/MessageRecipient");
+const MessageDeletion = require("../models/MessageDeletion");
+const db = require("../db");
 
-const { GetObjectCommand } = require("@aws-sdk/client-s3");
+const { GetObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
 const s3Client = require("../utils/s3Client");
@@ -282,3 +285,132 @@ exports.deleteMessageForMe = async (req, res) => {
         });
     }
 };
+
+exports.deleteMessageForEveryone = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const messageId = parseInt(req.params.messageId, 10);
+
+        if (isNaN(messageId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid message id"
+            });
+        }
+
+        let message = await Message.findByPk(messageId);
+        let messageStore = "live";
+
+        if (!message) {
+            message = await ArchivedMessage.findByPk(messageId);
+            messageStore = "archived";
+        }
+
+        if (!message) {
+            return res.status(404).json({
+                success: false,
+                message: "Message not found"
+            });
+        }
+
+        const room = await Room.findByPk(message.roomId);
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: "Room not found"
+            });
+        }
+
+        const authorized = await isAuthorizedForRoom(userId, room);
+
+        if (!authorized) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not a member of this room"
+            });
+        }
+
+        // Only the original sender can delete a message for everyone.
+        if (Number(message.senderId) !== Number(userId)) {
+            return res.status(403).json({
+                success: false,
+                message: "Only the sender can delete this message for everyone"
+            });
+        }
+
+        // Delete the private S3 object first when this is a media message.
+        // Delete-for-me intentionally leaves this object untouched.
+        if (message.mediaKey) {
+            try {
+                await s3Client.send(new DeleteObjectCommand({
+                    Bucket: process.env.AWS_S3_BUCKET,
+                    Key: message.mediaKey
+                }));
+            } catch (s3Err) {
+                console.error("S3 media deletion failed:", s3Err.message);
+                return res.status(502).json({
+                    success: false,
+                    message: "Failed to delete message media"
+                });
+            }
+        }
+
+        const transaction = await db.transaction();
+
+        try {
+            if (messageStore === "live") {
+                await Message.destroy({
+                    where: { id: messageId },
+                    transaction
+                });
+            } else {
+                await ArchivedMessage.destroy({
+                    where: { id: messageId },
+                    transaction
+                });
+            }
+
+            // Remove delivery/read and per-user delete-for-me state for the
+            // globally deleted message. These rows are no longer meaningful.
+            await MessageRecipient.destroy({
+                where: { messageId },
+                transaction
+            });
+
+            await MessageDeletion.destroy({
+                where: { messageId },
+                transaction
+            });
+
+            await transaction.commit();
+        } catch (dbErr) {
+            await transaction.rollback();
+            throw dbErr;
+        }
+
+        const io = req.app.get("io");
+
+        if (io) {
+            io.to(String(room.id)).emit("room:messageDeleted", {
+                messageId,
+                roomId: room.id,
+                deletedFor: "everyone"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            messageId,
+            roomId: room.id,
+            deletedFor: "everyone"
+        });
+    } catch (err) {
+        console.error("Delete-for-everyone error:", err.message);
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+    }
+};
+

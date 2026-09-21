@@ -103,6 +103,21 @@ messagesContainer.addEventListener(
     "click",
     async (event) => {
 
+        const deleteForEveryoneButton = event.target.closest(
+            "[data-delete-everyone-message-id]"
+        );
+
+        if (deleteForEveryoneButton) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            await deleteMessageForEveryone(
+                deleteForEveryoneButton.dataset.deleteEveryoneMessageId
+            );
+
+            return;
+        }
+
         const deleteButton = event.target.closest(
             "[data-delete-message-id]"
         );

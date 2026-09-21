@@ -309,6 +309,15 @@ socket.on(
     }
 );
 
+// MESSAGE DELETED FOR EVERYONE
+socket.on("room:messageDeleted", ({ messageId, roomId }) => {
+    if (!currentRoom || Number(roomId) !== Number(currentRoom.id)) {
+        return;
+    }
+
+    removeRenderedMessage(messageId);
+});
+
 // MESSAGE INPUT EVENTS
 
 sendBtn.addEventListener(
@@ -388,3 +397,47 @@ async function deleteMessageForMe(messageId) {
         alert(messageText);
     }
 }
+
+// DELETE FOR EVERYONE
+async function deleteMessageForEveryone(messageId) {
+    if (!messageId || !currentRoom) {
+        return;
+    }
+
+    const message = findMessageById(messageId);
+    if (!message) {
+        return;
+    }
+
+    if (Number(message.senderId) !== Number(currentUser.userId)) {
+        alert("Only the sender can delete this message for everyone.");
+        return;
+    }
+
+    const confirmed = window.confirm(
+        "Delete this message for everyone? This also permanently removes its media."
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        await axios.delete(
+            `${BASE_URL}/rooms/messages/${messageId}/everyone`,
+            {
+                headers: {
+                    Authorization: token
+                }
+            }
+        );
+
+        removeRenderedMessage(messageId);
+    } catch (err) {
+        const messageText =
+            err.response?.data?.message ||
+            "Couldn't delete the message for everyone.";
+        alert(messageText);
+    }
+}
+

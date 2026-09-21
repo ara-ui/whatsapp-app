@@ -87,3 +87,29 @@ test("delete-for-me route requires authentication", () => {
   const routes = read("routes/messageRoutes.js");
   assert.match(routes, /router\.delete\("\/messages\/:messageId\/me", authenticate/);
 });
+
+
+test("delete-for-everyone is sender-authorized and deletes S3 media", () => {
+  const controller = read("controller/messageController.js");
+  const routes = read("routes/messageRoutes.js");
+  assert.match(controller, /deleteMessageForEveryone/);
+  assert.match(controller, /Only the sender can delete this message for everyone/);
+  assert.match(controller, /DeleteObjectCommand/);
+  assert.match(controller, /Message\.destroy/);
+  assert.match(controller, /ArchivedMessage\.destroy/);
+  assert.match(routes, /router\.delete\("\/messages\/:messageId\/everyone", authenticate/);
+});
+
+test("delete-for-everyone broadcasts a room deletion event", () => {
+  const controller = read("controller/messageController.js");
+  const frontend = read("js/chatMessages.js");
+  assert.match(controller, /room:messageDeleted/);
+  assert.match(frontend, /room:messageDeleted/);
+  assert.match(frontend, /removeRenderedMessage\(messageId\)/);
+});
+
+test("delete-for-everyone is offered only for messages owned by the current user", () => {
+  const renderer = read("js/messageRenderer.js");
+  assert.match(renderer, /isMine\s*\n?\s*\? `[^`]*data-delete-everyone-message-id/s);
+  assert.match(renderer, /Delete for everyone/);
+});

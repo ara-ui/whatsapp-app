@@ -3,7 +3,8 @@ const router = express.Router();
 
 const {
     getRoomMessages,
-    deleteMessageForMe
+    deleteMessageForMe,
+    deleteMessageForEveryone
 } = require("../controller/messageController");
 const { authenticate } = require("../middleware/authentication");
 
@@ -13,3 +14,4 @@ router.get("/:roomId/messages", authenticate, getRoomMessages);
 router.delete("/messages/:messageId/me", authenticate, deleteMessageForMe);
 
 module.exports = router;
+router.delete("/messages/:messageId/everyone", authenticate, deleteMessageForEveryone);
