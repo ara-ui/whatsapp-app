@@ -101,7 +101,22 @@ backBtn.addEventListener(
 
 messagesContainer.addEventListener(
     "click",
-    (event) => {
+    async (event) => {
+
+        const deleteButton = event.target.closest(
+            "[data-delete-message-id]"
+        );
+
+        if (deleteButton) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            await deleteMessageForMe(
+                deleteButton.dataset.deleteMessageId
+            );
+
+            return;
+        }
 
         const mediaElement =
             event.target.closest(

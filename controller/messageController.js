@@ -11,6 +11,10 @@ const s3Client = require("../utils/s3Client");
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
 const { getMessageStatus } = require("../utils/messageStatus");
 const {
+    getDeletedMessageIdsForUser,
+    markMessageDeletedForUser
+} = require("../utils/messageDeletion");
+const {
     normalizeLimit,
     encodeCursor,
     decodeCursor,
@@ -100,7 +104,7 @@ exports.getRoomMessages = async (req, res) => {
             }
         });
 
-        const messages = [...byId.values()]
+        const sortedMessages = [...byId.values()]
             .sort((a, b) => {
                 const timeDifference =
                     new Date(b.createdAt) - new Date(a.createdAt);
@@ -110,13 +114,23 @@ exports.getRoomMessages = async (req, res) => {
                 }
 
                 return Number(b.id) - Number(a.id);
-            })
-            .slice(0, limit);
+            });
+
+        const deletedIds = await getDeletedMessageIdsForUser(
+            userId,
+            sortedMessages.map(message => message.id)
+        );
+
+        const visibleMessages = sortedMessages.filter(
+            message => !deletedIds.has(String(message.id))
+        );
+
+        const messages = visibleMessages.slice(0, limit);
 
         const hasMore =
             liveMessages.length > limit ||
             archivedMessages.length > limit ||
-            byId.size > messages.length;
+            visibleMessages.length > messages.length;
 
         const archivedSenderIds = [...new Set(
             messages
@@ -202,6 +216,66 @@ exports.getRoomMessages = async (req, res) => {
 
     } catch (err) {
         console.error("Room message history error:", err.message);
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+    }
+};
+
+
+exports.deleteMessageForMe = async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const messageId = parseInt(req.params.messageId, 10);
+
+        if (isNaN(messageId)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid message id"
+            });
+        }
+
+        let message = await Message.findByPk(messageId);
+
+        if (!message) {
+            message = await ArchivedMessage.findByPk(messageId);
+        }
+
+        if (!message) {
+            return res.status(404).json({
+                success: false,
+                message: "Message not found"
+            });
+        }
+
+        const room = await Room.findByPk(message.roomId);
+
+        if (!room) {
+            return res.status(404).json({
+                success: false,
+                message: "Room not found"
+            });
+        }
+
+        const authorized = await isAuthorizedForRoom(userId, room);
+
+        if (!authorized) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not a member of this room"
+            });
+        }
+
+        await markMessageDeletedForUser(messageId, userId);
+
+        return res.status(200).json({
+            success: true,
+            messageId,
+            deletedFor: "me"
+        });
+    } catch (err) {
+        console.error("Delete-for-me error:", err.message);
         return res.status(500).json({
             success: false,
             message: "Server Error"

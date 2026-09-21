@@ -350,3 +350,41 @@ messageInput.addEventListener(
         startTyping();
     }
 );
+
+// DELETE FOR ME
+async function deleteMessageForMe(messageId) {
+    if (!messageId || !currentRoom) {
+        return;
+    }
+
+    const message = findMessageById(messageId);
+    if (!message) {
+        return;
+    }
+
+    const confirmed = window.confirm(
+        "Delete this message and its media for you?"
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+        await axios.delete(
+            `${BASE_URL}/rooms/messages/${messageId}/me`,
+            {
+                headers: {
+                    Authorization: token
+                }
+            }
+        );
+
+        removeRenderedMessage(messageId);
+    } catch (err) {
+        const messageText =
+            err.response?.data?.message ||
+            "Couldn't delete the message.";
+        alert(messageText);
+    }
+}

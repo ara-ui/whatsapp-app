@@ -3,6 +3,7 @@ const Room = require("./Room");
 const RoomMember = require("./RoomMember");
 const Message = require("./Message");
 const MessageRecipient =require("./MessageRecipient");
+const MessageDeletion = require("./MessageDeletion");
 const ForgotPassword=require("./ForgotPassword");
 
 // Room <-> RoomMember (one room has many membership rows)
@@ -70,6 +71,28 @@ MessageRecipient.belongsTo(Message, {
     constraints: false
 });
 
+// Per-user "delete for me" records. MessageDeletions intentionally has no
+// cascading foreign key because the same message id may move to ArchivedMessages.
+Message.hasMany(MessageDeletion, {
+    foreignKey: "messageId",
+    constraints: false
+});
+
+MessageDeletion.belongsTo(Message, {
+    foreignKey: "messageId",
+    constraints: false
+});
+
+User.hasMany(MessageDeletion, {
+    foreignKey: "userId",
+    constraints: false
+});
+
+MessageDeletion.belongsTo(User, {
+    foreignKey: "userId",
+    constraints: false
+});
+
 
 // User -> MessageRecipient
 
@@ -98,5 +121,6 @@ module.exports = {
     RoomMember,
     Message,
     MessageRecipient,
+    MessageDeletion,
     ForgotPassword
 };

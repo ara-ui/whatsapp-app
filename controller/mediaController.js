@@ -10,6 +10,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3Client = require("../utils/s3Client");
 const Room = require("../models/Room");
 const Message = require("../models/Message");
+const { getDeletedMessageIdsForUser } = require("../utils/messageDeletion");
 
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
 const {
@@ -223,6 +224,20 @@ async function loadAuthorizedMediaMessage(userId, messageId) {
     }
 
     if (!message || !message.mediaKey) {
+        return {
+            error: {
+                status: 404,
+                message: "Media not found"
+            }
+        };
+    }
+
+    const deletedIds = await getDeletedMessageIdsForUser(
+        userId,
+        [message.id]
+    );
+
+    if (deletedIds.has(String(message.id))) {
         return {
             error: {
                 status: 404,

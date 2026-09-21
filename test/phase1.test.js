@@ -58,3 +58,32 @@ test("pagination uses a stable createdAt + id cursor", () => {
   assert.match(source, /Op\.lt/);
   assert.match(source, /base64url/);
 });
+
+test("delete-for-me uses a per-user deletion record", () => {
+  const controller = read("controller/messageController.js");
+  const model = read("models/MessageDeletion.js");
+  assert.match(controller, /markMessageDeletedForUser/);
+  assert.match(controller, /deleteMessageForMe/);
+  assert.match(model, /messageId/);
+  assert.match(model, /userId/);
+  assert.match(model, /unique: true/);
+});
+
+test("delete-for-me hides media without deleting the shared S3 object", () => {
+  const media = read("controller/mediaController.js");
+  const deletion = read("utils/messageDeletion.js");
+  assert.match(media, /getDeletedMessageIdsForUser/);
+  assert.match(media, /Media not found/);
+  assert.match(deletion, /MessageDeletion\.findOrCreate/);
+});
+
+test("message history excludes messages deleted for the current user", () => {
+  const controller = read("controller/messageController.js");
+  assert.match(controller, /visibleMessages/);
+  assert.match(controller, /deletedIds\.has/);
+});
+
+test("delete-for-me route requires authentication", () => {
+  const routes = read("routes/messageRoutes.js");
+  assert.match(routes, /router\.delete\("\/messages\/:messageId\/me", authenticate/);
+});

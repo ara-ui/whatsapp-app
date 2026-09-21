@@ -136,6 +136,15 @@ function createMessageElement(msg) {
                     `
                     : ""
             }
+            <button
+                type="button"
+                class="message-delete-btn"
+                data-delete-message-id="${messageId}"
+                aria-label="Delete message for me"
+                title="Delete for me"
+            >
+                Delete
+            </button>
         </div>
     `;
 
@@ -289,4 +298,18 @@ function hasRenderedMessage(messageId) {
     return renderedMessageIds.has(
         String(messageId)
     );
+}
+function removeRenderedMessage(messageId) {
+    const id = String(messageId);
+    const element = document.querySelector(
+        `.message[data-message-id="${id}"]`
+    );
+
+    if (element) {
+        element.remove();
+    }
+
+    renderedMessageIds.delete(id);
+    renderedMessages.delete(id);
+    pendingStatusUpdates.delete(id);
 }
