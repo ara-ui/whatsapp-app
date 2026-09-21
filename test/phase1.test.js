@@ -41,3 +41,20 @@ test("socket authentication does not log the decoded JWT payload", () => {
   const source = read("socket-io/middleware.js");
   assert.doesNotMatch(source, /console\.log\([\s\S]*decoded\)/);
 });
+
+test("message history supports bounded cursor pagination", () => {
+  const source = read("controller/messageController.js");
+  assert.match(source, /normalizeLimit/);
+  assert.match(source, /decodeCursor/);
+  assert.match(source, /limit: fetchLimit/);
+  assert.match(source, /nextCursor/);
+  assert.match(source, /hasMore/);
+});
+
+test("pagination uses a stable createdAt + id cursor", () => {
+  const source = read("utils/messagePagination.js");
+  assert.match(source, /createdAt/);
+  assert.match(source, /id/);
+  assert.match(source, /Op\.lt/);
+  assert.match(source, /base64url/);
+});

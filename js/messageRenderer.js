@@ -37,7 +37,68 @@ function appendMessage(msg, container) {
     renderedMessageIds.add(messageId);
     renderedMessages.set(messageId, msg);
 
+    const div = createMessageElement(msg);
+    container.appendChild(div);
+
+    if (pendingStatusUpdates.has(messageId)) {
+
+        const pendingStatus =
+            pendingStatusUpdates.get(messageId);
+
+        pendingStatusUpdates.delete(messageId);
+
+        updateMessageStatus(messageId, pendingStatus);
+    }
+}
+
+
+function prependMessages(messages, container) {
+    if (!Array.isArray(messages) || messages.length === 0) {
+        return;
+    }
+
+    // The API returns older messages in chronological order. Insert them
+    // before the current first message so the visible history stays ordered.
+    const firstMessage = container.querySelector(".message");
+    const fragment = document.createDocumentFragment();
+
+    messages.forEach(message => {
+        if (!message || !message.id) {
+            return;
+        }
+
+        const messageId = String(message.id);
+
+        if (renderedMessageIds.has(messageId)) {
+            return;
+        }
+
+        renderedMessageIds.add(messageId);
+        renderedMessages.set(messageId, message);
+
+        const div = createMessageElement(message);
+        fragment.appendChild(div);
+    });
+
+    if (firstMessage) {
+        container.insertBefore(fragment, firstMessage);
+    } else {
+        container.appendChild(fragment);
+    }
+
+    messages.forEach(message => {
+        const messageId = String(message && message.id);
+        if (pendingStatusUpdates.has(messageId)) {
+            const pendingStatus = pendingStatusUpdates.get(messageId);
+            pendingStatusUpdates.delete(messageId);
+            updateMessageStatus(messageId, pendingStatus);
+        }
+    });
+}
+
+function createMessageElement(msg) {
     const div = document.createElement("div");
+    const messageId = String(msg.id);
 
     const time = new Date(msg.createdAt).toLocaleTimeString([], {
         hour: "2-digit",
@@ -60,12 +121,9 @@ function appendMessage(msg, container) {
 
     div.innerHTML = `
         ${senderLabel}
-
         ${renderMessageBody(msg)}
-
         <div class="time">
             <span>${time}</span>
-
             ${
                 isMine
                     ? `
@@ -81,18 +139,9 @@ function appendMessage(msg, container) {
         </div>
     `;
 
-    container.appendChild(div);
-
-    if (pendingStatusUpdates.has(messageId)) {
-
-        const pendingStatus =
-            pendingStatusUpdates.get(messageId);
-
-        pendingStatusUpdates.delete(messageId);
-
-        updateMessageStatus(messageId, pendingStatus);
-    }
+    return div;
 }
+
 
 // MESSAGE STATUS
 

@@ -1,5 +1,13 @@
 // CHAT MESSAGES
 
+const MESSAGE_PAGE_SIZE = 30;
+
+let messagePagination = {
+    hasMore: false,
+    nextCursor: null,
+    loading: false
+};
+
 function markMessageAsRead(messageId) {
 
     if (!messageId) {
@@ -11,22 +19,60 @@ function markMessageAsRead(messageId) {
     });
 }
 
+function removeLoadOlderButton() {
+    const button = document.getElementById("loadOlderMessagesBtn");
+
+    if (button) {
+        button.remove();
+    }
+}
+
+function renderLoadOlderButton() {
+    removeLoadOlderButton();
+
+    if (!messagePagination.hasMore) {
+        return;
+    }
+
+    const button = document.createElement("button");
+    button.id = "loadOlderMessagesBtn";
+    button.type = "button";
+    button.className = "load-older-messages";
+    button.textContent = "Load older messages";
+    button.addEventListener("click", loadOlderMessages);
+
+    messagesContainer.prepend(button);
+}
 
 async function loadMessageHistory(roomId) {
+
+    messagePagination = {
+        hasMore: false,
+        nextCursor: null,
+        loading: false
+    };
+
+    removeLoadOlderButton();
 
     try {
 
         const response = await axios.get(
             `${BASE_URL}/rooms/${roomId}/messages`,
             {
+                params: {
+                    limit: MESSAGE_PAGE_SIZE
+                },
                 headers: {
                     Authorization: token
                 }
             }
         );
 
-        const messages =
-            response.data.messages || [];
+        const messages = response.data.messages || [];
+        const pagination = response.data.pagination || {};
+
+        messagePagination.hasMore = Boolean(pagination.hasMore);
+        messagePagination.nextCursor = pagination.nextCursor || null;
 
         messages.forEach(message => {
 
@@ -39,22 +85,17 @@ async function loadMessageHistory(roomId) {
 
         });
 
-
-        // Render message history
         renderMessages(
             messages,
             messagesContainer
         );
 
+        renderLoadOlderButton();
 
-        // Scroll to latest message
         scrollToLatestAfterHistory();
 
-         // AI SMART REPLIES
-      
         const latestMessage =
             messages[messages.length - 1];
-
 
         if (
             latestMessage &&
@@ -75,15 +116,96 @@ async function loadMessageHistory(roomId) {
 
         }
 
-
     } catch (err) {
 
-        console.log(err);
+        console.error("Message history load error:", err.message);
 
         messagesContainer.innerHTML =
             `<div class="empty-state error">
                 Couldn't load message history.
             </div>`;
+    }
+}
+
+async function loadOlderMessages() {
+
+    if (
+        !currentRoom ||
+        !messagePagination.hasMore ||
+        !messagePagination.nextCursor ||
+        messagePagination.loading
+    ) {
+        return;
+    }
+
+    messagePagination.loading = true;
+
+    const button = document.getElementById("loadOlderMessagesBtn");
+    const previousText = button ? button.textContent : "";
+
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Loading…";
+    }
+
+    const previousScrollHeight = messagesContainer.scrollHeight;
+    const previousScrollTop = messagesContainer.scrollTop;
+
+    try {
+        const response = await axios.get(
+            `${BASE_URL}/rooms/${currentRoom.id}/messages`,
+            {
+                params: {
+                    limit: MESSAGE_PAGE_SIZE,
+                    before: messagePagination.nextCursor
+                },
+                headers: {
+                    Authorization: token
+                }
+            }
+        );
+
+        const olderMessages = response.data.messages || [];
+        const pagination = response.data.pagination || {};
+
+        olderMessages.forEach(message => {
+            if (
+                Number(message.senderId) !==
+                Number(currentUser.userId)
+            ) {
+                markMessageAsRead(message.id);
+            }
+        });
+
+        prependMessages(
+            olderMessages,
+            messagesContainer
+        );
+
+        messagePagination.hasMore = Boolean(pagination.hasMore);
+        messagePagination.nextCursor = pagination.nextCursor || null;
+
+        renderLoadOlderButton();
+
+        requestAnimationFrame(() => {
+            const addedHeight =
+                messagesContainer.scrollHeight - previousScrollHeight;
+
+            messagesContainer.scrollTop =
+                previousScrollTop + addedHeight;
+        });
+
+    } catch (err) {
+
+        console.error("Older message load error:", err.message);
+
+        if (button) {
+            button.disabled = false;
+            button.textContent = previousText || "Load older messages";
+        }
+
+    } finally {
+        messagePagination.loading = false;
     }
 }
 
@@ -132,42 +254,25 @@ function sendCurrentMessage() {
 
 socket.on("room:message", (msg) => {
 
-    console.log(
-        "📩 room:message received:",
-        msg
-    );
-
-
     const isForOpenRoom =
         currentRoom &&
         Number(msg.roomId) === Number(currentRoom.id);
 
-
     if (!isForOpenRoom) {
-
-        console.log(
-            "❌ Message belongs to another room"
-        );
-
         return;
     }
-
 
     const emptyEl =
         messagesContainer.querySelector(
             ".empty-state"
         );
 
-
     if (emptyEl) {
         emptyEl.remove();
     }
 
-
     appendMessage(msg, messagesContainer);
     scrollToLatest();
-
- // AI SMART REPLIES
 
     if (
         Number(msg.senderId) !== Number(currentUser.userId) &&
@@ -181,11 +286,9 @@ socket.on("room:message", (msg) => {
         );
     }
 
-   // READ RECEIPT
-  
-   if (
-    Number(msg.senderId) !==
-    Number(currentUser.userId)
+    if (
+        Number(msg.senderId) !==
+        Number(currentUser.userId)
     ) {
         markMessageAsRead(msg.id);
     }
@@ -205,13 +308,13 @@ socket.on(
 
     }
 );
+
 // MESSAGE INPUT EVENTS
 
 sendBtn.addEventListener(
     "click",
     sendCurrentMessage
 );
-
 
 messageInput.addEventListener(
     "keydown",
@@ -220,14 +323,15 @@ messageInput.addEventListener(
         if (event.key === "Enter") {
 
             event.preventDefault();
-            
+
             sendCurrentMessage();
 
         }
 
     }
 );
-//typing indicator
+
+// typing indicator
 
 messageInput.addEventListener(
     "input",
@@ -236,14 +340,12 @@ messageInput.addEventListener(
         const content =
             messageInput.value.trim();
 
-
         if (!content) {
 
             stopTyping();
 
             return;
         }
-
 
         startTyping();
     }

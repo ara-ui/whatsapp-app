@@ -10,6 +10,12 @@ const s3Client = require("../utils/s3Client");
 
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
 const { getMessageStatus } = require("../utils/messageStatus");
+const {
+    normalizeLimit,
+    encodeCursor,
+    decodeCursor,
+    buildBeforeWhere
+} = require("../utils/messagePagination");
 
 exports.getRoomMessages = async (req, res) => {
     try {
@@ -41,9 +47,31 @@ exports.getRoomMessages = async (req, res) => {
             });
         }
 
+        const limit = normalizeLimit(req.query.limit);
+        const cursor = decodeCursor(req.query.before);
+
+        if (req.query.before && !cursor) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid pagination cursor"
+            });
+        }
+
+        const where = buildBeforeWhere(room.id, cursor);
+        const fetchLimit = limit + 1;
+
+        // Archived messages intentionally retain their original message id.
+        // Query both stores with the same cursor, then merge and de-duplicate
+        // before applying the final page size. This keeps history correct while
+        // messages move from the live table into the archive table.
         const [liveMessages, archivedMessages] = await Promise.all([
             Message.findAll({
-                where: { roomId: room.id },
+                where,
+                limit: fetchLimit,
+                order: [
+                    ["createdAt", "DESC"],
+                    ["id", "DESC"]
+                ],
                 include: [{
                     model: User,
                     as: "Sender",
@@ -51,23 +79,44 @@ exports.getRoomMessages = async (req, res) => {
                 }]
             }),
             ArchivedMessage.findAll({
-                where: { roomId: room.id }
+                where,
+                limit: fetchLimit,
+                order: [
+                    ["createdAt", "DESC"],
+                    ["id", "DESC"]
+                ]
             })
         ]);
 
-        // Archived rows intentionally keep the original message id.
-        // De-duplicate by id so an edge case cannot show the same message twice.
         const byId = new Map();
-        liveMessages.forEach(message => byId.set(String(message.id), message));
+
+        liveMessages.forEach(message => {
+            byId.set(String(message.id), message);
+        });
+
         archivedMessages.forEach(message => {
             if (!byId.has(String(message.id))) {
                 byId.set(String(message.id), message);
             }
         });
 
-        const messages = [...byId.values()].sort(
-            (a, b) => new Date(a.createdAt) - new Date(b.createdAt)
-        );
+        const messages = [...byId.values()]
+            .sort((a, b) => {
+                const timeDifference =
+                    new Date(b.createdAt) - new Date(a.createdAt);
+
+                if (timeDifference !== 0) {
+                    return timeDifference;
+                }
+
+                return Number(b.id) - Number(a.id);
+            })
+            .slice(0, limit);
+
+        const hasMore =
+            liveMessages.length > limit ||
+            archivedMessages.length > limit ||
+            byId.size > messages.length;
 
         const archivedSenderIds = [...new Set(
             messages
@@ -87,66 +136,72 @@ exports.getRoomMessages = async (req, res) => {
             archivedSenders.map(sender => [Number(sender.id), sender.name])
         );
 
+        const pageMessages = [...messages].reverse();
+
         const formatted = await Promise.all(
-            messages.map(async (m) => {
-                let mediaUrl = null;
+            pageMessages.map(async (m) => {
+                    let mediaUrl = null;
 
-                if (m.mediaKey) {
-                    mediaUrl = await getSignedUrl(
-                        s3Client,
-                        new GetObjectCommand({
-                            Bucket: process.env.AWS_S3_BUCKET,
-                            Key: m.mediaKey
-                        }),
-                        { expiresIn: 3600 }
-                    );
-                }
+                    if (m.mediaKey) {
+                        mediaUrl = await getSignedUrl(
+                            s3Client,
+                            new GetObjectCommand({
+                                Bucket: process.env.AWS_S3_BUCKET,
+                                Key: m.mediaKey
+                            }),
+                            { expiresIn: 3600 }
+                        );
+                    }
 
-                // Status ticks are only ever shown on the current
-                // user's OWN messages (see messageRenderer.js), and
-                // community chat never tracks delivery/read state.
-                // Without this, reloading a conversation's history
-                // would reset every sent message back to a single
-                // "sent" tick even if it had already been delivered
-                // or read live.
-                let status = null;
+                    let status = null;
 
-                if (
-                    Number(m.senderId) === Number(userId) &&
-                    room.type !== "community"
-                ) {
-                    status = await getMessageStatus(
-                        m.id,
-                        m.senderId,
-                        room.type
-                    );
-                }
+                    if (
+                        Number(m.senderId) === Number(userId) &&
+                        room.type !== "community"
+                    ) {
+                        status = await getMessageStatus(
+                            m.id,
+                            m.senderId,
+                            room.type
+                        );
+                    }
 
-                return {
-                    id: m.id,
-                    roomId: m.roomId,
-                    senderId: m.senderId,
-                    senderName: m.Sender
-                        ? m.Sender.name
-                        : senderNames.get(Number(m.senderId)) || null,
-                    messageType: m.messageType,
-                    content: m.content,
-                    mediaUrl,
-                    mediaKey: m.mediaKey,
-                    fileName: m.fileName,
-                    mimeType: m.mimeType,
-                    createdAt: m.createdAt,
-                    status
-                };
-            })
+                    return {
+                        id: m.id,
+                        roomId: m.roomId,
+                        senderId: m.senderId,
+                        senderName: m.Sender
+                            ? m.Sender.name
+                            : senderNames.get(Number(m.senderId)) || null,
+                        messageType: m.messageType,
+                        content: m.content,
+                        mediaUrl,
+                        mediaKey: m.mediaKey,
+                        fileName: m.fileName,
+                        mimeType: m.mimeType,
+                        createdAt: m.createdAt,
+                        status
+                    };
+                })
         );
+
+        const oldestMessage = messages[messages.length - 1] || null;
+        const nextCursor = hasMore && oldestMessage
+            ? encodeCursor(oldestMessage.createdAt, oldestMessage.id)
+            : null;
+
         return res.status(200).json({
             success: true,
-            messages: formatted
+            messages: formatted,
+            pagination: {
+                limit,
+                hasMore,
+                nextCursor
+            }
         });
 
     } catch (err) {
-        console.log(err);
+        console.error("Room message history error:", err.message);
         return res.status(500).json({
             success: false,
             message: "Server Error"
