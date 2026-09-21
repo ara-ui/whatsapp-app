@@ -103,7 +103,10 @@ function renderConnectedUsers(users) {
                 <strong>${escapeHtml(connection.user.name)}</strong>
                 <span>${escapeHtml(connection.user.email)}</span>
             </div>
-            <button type="button" class="btn-primary connection-chat-btn">Chat</button>
+            <div class="connection-actions">
+                <button type="button" class="btn-primary connection-chat-btn">Chat</button>
+                <button type="button" class="btn-danger connection-disconnect-btn">Disconnect</button>
+            </div>
         `;
 
         item.querySelector(".connection-chat-btn").addEventListener("click", async () => {
@@ -119,6 +122,40 @@ function renderConnectedUsers(users) {
             } catch (err) {
                 showConnectionFeedback(
                     err.response?.data?.message || "Couldn't open the chat.",
+                    true
+                );
+            }
+        });
+
+        item.querySelector(".connection-disconnect-btn").addEventListener("click", async () => {
+            const confirmed = window.confirm(
+                `Disconnect from ${connection.user.name}? Your existing conversation will remain, but you won't be able to send new private messages until you connect again.`
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            const button = item.querySelector(".connection-disconnect-btn");
+            button.disabled = true;
+            button.textContent = "Disconnecting…";
+
+            try {
+                await axios.delete(
+                    `${BASE_URL}/connections/${connection.connectionId}`,
+                    { headers: { Authorization: token } }
+                );
+
+                showConnectionFeedback(`Disconnected from ${connection.user.name}.`);
+                await loadConnectionData();
+                if (typeof loadRooms === "function") {
+                    await loadRooms();
+                }
+            } catch (err) {
+                button.disabled = false;
+                button.textContent = "Disconnect";
+                showConnectionFeedback(
+                    err.response?.data?.message || "Couldn't disconnect.",
                     true
                 );
             }
@@ -210,5 +247,15 @@ socket.on("connection:accepted", () => {
 socket.on("connection:rejected", () => {
     if (!connectionModal.classList.contains("hidden")) {
         loadConnectionData();
+    }
+});
+
+
+socket.on("connection:disconnected", () => {
+    if (!connectionModal.classList.contains("hidden")) {
+        loadConnectionData();
+    }
+    if (typeof loadRooms === "function") {
+        loadRooms();
     }
 });

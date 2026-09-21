@@ -162,3 +162,23 @@ test("connection UI supports pending requests and connected users", () => {
   assert.match(script, /accept/);
   assert.match(script, /reject/);
 });
+
+
+test("disconnect removes only the connection and broadcasts the event", () => {
+  const controller = read("controller/connectionController.js");
+  const routes = read("routes/connectionRoutes.js");
+  assert.match(controller, /disconnectUser/);
+  assert.match(controller, /connection\.destroy\(\)/);
+  assert.match(controller, /connection:disconnected/);
+  assert.match(routes, /router\.delete\("\/:connectionId", disconnectUser\)/);
+});
+
+test("disconnect UI provides a confirmation and refreshes connection data", () => {
+  const script = read("js/connections.js");
+  const css = read("css/home.css");
+  assert.match(script, /connection-disconnect-btn/);
+  assert.match(script, /window\.confirm/);
+  assert.match(script, /axios\.delete/);
+  assert.match(script, /connection:disconnected/);
+  assert.match(css, /\.btn-danger/);
+});

@@ -230,6 +230,63 @@ async function respondToRequest(req, res, status) {
     }
 }
 
+
+
+exports.disconnectUser = async (req, res) => {
+    try {
+        const userId = Number(req.user.id);
+        const connection = await Connection.findByPk(req.params.connectionId);
+
+        if (!connection || connection.status !== "accepted") {
+            return res.status(404).json({
+                success: false,
+                message: "Connected relationship not found"
+            });
+        }
+
+        const isParticipant =
+            Number(connection.userAId) === userId ||
+            Number(connection.userBId) === userId;
+
+        if (!isParticipant) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not part of this connection"
+            });
+        }
+
+        const otherUserId =
+            Number(connection.userAId) === userId
+                ? Number(connection.userBId)
+                : Number(connection.userAId);
+
+        await connection.destroy();
+
+        const io = req.app.get("io");
+        if (io) {
+            const payload = {
+                connectionId: connection.id,
+                userId,
+                otherUserId
+            };
+
+            io.to(`user:${userId}`).emit("connection:disconnected", payload);
+            io.to(`user:${otherUserId}`).emit("connection:disconnected", payload);
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Connection removed"
+        });
+    } catch (err) {
+        console.error("Disconnect connection error:", err.message);
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
+    }
+};
+
 exports.getConnectedUsers = async (req, res) => {
     try {
         const userId = Number(req.user.id);
