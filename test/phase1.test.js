@@ -192,3 +192,58 @@ test("disconnect UI provides a confirmation and refreshes connection data", () =
   assert.match(script, /connection:disconnected/);
   assert.match(css, /\.btn-danger/);
 });
+
+test("AI routes require authentication and per-user rate limiting", () => {
+  const routes = read("routes/aiRoutes.js");
+  const limiter = read("middleware/aiRateLimiter.js");
+  assert.match(routes, /authenticate/);
+  assert.match(routes, /smartRepliesLimiter/);
+  assert.match(routes, /predictiveLimiter/);
+  assert.match(limiter, /express-rate-limit/);
+  assert.match(limiter, /req\.user\?\.id/);
+});
+
+test("AI controller bounds request payloads before calling Gemini", () => {
+  const controller = read("controller/aiController.js");
+  assert.match(controller, /MAX_MESSAGE_LENGTH = 1000/);
+  assert.match(controller, /MAX_RECENT_MESSAGES = 8/);
+  assert.match(controller, /normalizeRecentMessages/);
+  assert.match(controller, /slice\(-maxItems\)/);
+});
+
+test("JWT expiry is configurable through environment settings", () => {
+  const controller = read("controller/userController.js");
+  const env = read(".env.example");
+  assert.match(controller, /getJwtExpiresIn/);
+  assert.match(env, /JWT_EXPIRES_IN=/);
+});
+
+test("CORS is restricted to configured origins", () => {
+  const app = read("app.js");
+  const socket = read("socket-io/index.js");
+  const config = read("utils/config.js");
+  assert.match(app, /origin: getAllowedOrigins\(\)/);
+  assert.match(socket, /origin: getAllowedOrigins\(\)/);
+  assert.match(config, /CORS_ORIGINS/);
+  assert.doesNotMatch(app, /app\.use\(cors\(\)\)/);
+});
+
+test("security configuration rejects default JWT and Gemini placeholders", () => {
+  const config = read("utils/config.js");
+  assert.match(config, /replace_with_a_long_random_secret/);
+  assert.match(config, /your_gemini_api_key/);
+  assert.match(config, /JWT_SECRET must be configured/);
+});
+
+test("authentication and socket logs do not expose JWT payloads or user identity", () => {
+  const auth = read("middleware/authentication.js");
+  const socket = read("socket-io/middleware.js");
+  const socketIndex = read("socket-io/index.js");
+  const users = read("controller/userController.js");
+  assert.doesNotMatch(auth, /console\.log\(err\)/);
+  assert.doesNotMatch(socket, /decoded\.userId/);
+  assert.doesNotMatch(socketIndex, /console\.log\([\s\S]*socket\.user\.userId/);
+  assert.doesNotMatch(socketIndex, /console\.log\([\s\S]*socket\.user\.name/);
+  assert.doesNotMatch(users, /console\.log\("User created successfully:/);
+  assert.doesNotMatch(users, /console\.log\("Login successful for user:/);
+});

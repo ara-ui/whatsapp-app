@@ -8,11 +8,13 @@ const {
 } = require("../controller/aiController");
 
 const { authenticate } = require("../middleware/authentication");
+const { smartRepliesLimiter, predictiveLimiter } = require("../middleware/aiRateLimiter");
 
 
 router.post(
     "/smart-replies",
     authenticate,
+    smartRepliesLimiter,
     getSmartReplies
 );
 
@@ -20,6 +22,7 @@ router.post(
 router.post(
     "/predictive",
     authenticate,
+    predictiveLimiter,
     getPredictiveSuggestions
 );
 

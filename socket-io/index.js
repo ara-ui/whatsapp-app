@@ -3,13 +3,14 @@ const { Server } = require("socket.io");
 const socketAuthentication = require("./middleware");
 const roomHandler = require("./handlers/room");
 const {presenceHandler} = require("./handlers/presence");
+const { getAllowedOrigins } = require("../utils/config");
 
 
 const initializeSocket = (server) => {
 
     const io = new Server(server, {
         cors: {
-            origin: "*"
+            origin: getAllowedOrigins()
         }
     });
 
@@ -28,13 +29,7 @@ const initializeSocket = (server) => {
          presenceHandler(io,socket);
 
        socket.on("disconnect", (reason) => {
-            console.log(
-                "User disconnected:",
-                socket.user.userId,
-                socket.user.name,
-                "-",
-                reason
-            );
+            console.log("Socket disconnected:", reason);
         });
 
     });

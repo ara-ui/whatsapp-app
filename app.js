@@ -5,6 +5,7 @@ const express=require('express');
 const path = require("path");
 const cors=require('cors');
 const http=require('http');
+const { getAllowedOrigins, validateSecurityConfig } = require("./utils/config");
 
 
 const initializeSocket = require("./socket-io");
@@ -23,6 +24,9 @@ const forgotPasswordRoutes = require("./routes/forgotPasswordRoutes");
 const connectionRoutes = require("./routes/connectionRoutes");
 
 const app=express();
+
+validateSecurityConfig();
+
 const server=http.createServer(app);
 
 // Initialize Socket.IO
@@ -32,7 +36,10 @@ app.set("io", io);
 
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+    origin: getAllowedOrigins(),
+    credentials: false
+}));
 app.use(express.urlencoded({extended:true}));
 
 //static files
@@ -62,12 +69,12 @@ app.get("/",(req ,res)=>{
 
 //database connection
 sequelize.sync().then(()=>{
-    console.log("Table created successfully");
+    console.log("Database synchronized");
 
     server.listen(PORT,()=>{
-        console.log("Server running succcessfully ");
+        console.log(`Server listening on port ${PORT}`);
     });
 
 }).catch((err)=>{
-    console.log(err)
+    console.error("Database initialization failed:", err.message)
 });

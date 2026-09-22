@@ -15,12 +15,10 @@ const socketAuthentication = (socket, next) => {
 
         socket.user = decoded;
 
-        console.log("Socket authenticated for user:", decoded.userId);
-        
         next();
 
     } catch (err) {
-        console.log("Socket authentication failed:", err.message);
+        console.error("Socket authentication failed:", err.message);
 
         next(new Error("Authentication error: Invalid token"));
     }

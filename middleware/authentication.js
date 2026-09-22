@@ -34,7 +34,7 @@ exports.authenticate = async (req, res, next) => {
 
     } catch (err) {
 
-        console.log(err);
+        console.error("Authentication failed:", err.message);
 
         return res.status(401).json({
             success: false,

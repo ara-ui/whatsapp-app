@@ -2,6 +2,7 @@ const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
+const { getJwtExpiresIn } = require('../utils/config');
 
 
 // Generate JWT Access Token
@@ -14,7 +15,7 @@ function generateAccessToken(id, name,email) {
         },
         process.env.JWT_SECRET,
         {
-            expiresIn: "1d"
+            expiresIn: getJwtExpiresIn()
         }
     );
 }
@@ -48,8 +49,6 @@ const createUser = async (req, res) => {
             }
         });
 
-        console.log("Existing user found");
-
 
         // If user already exists
         if (existingUser) {
@@ -73,8 +72,6 @@ const createUser = async (req, res) => {
         });
 
 
-        console.log("User created successfully:", user.id);
-
 
         return res.status(201).json({
             success: true,
@@ -83,7 +80,7 @@ const createUser = async (req, res) => {
 
     } catch (err) {
 
-        console.error("Signup error:", err);
+        console.error("Signup error:", err.message);
 
         return res.status(500).json({
             success: false,
@@ -128,9 +125,6 @@ const loginUser = async (req, res) => {
         });
 
 
-        console.log("Login successful for user:", user.id);
-
-
         // User doesn't exist
         if (!user) {
             return res.status(404).json({
@@ -170,7 +164,7 @@ const loginUser = async (req, res) => {
 
     } catch (err) {
 
-        console.error("Login error:", err);
+        console.error("Login error:", err.message);
 
         return res.status(500).json({
             success: false,
@@ -215,7 +209,7 @@ const checkUser = async (req, res) => {
 
     } catch (err) {
 
-        console.log(err);
+        console.error("Check-user error:", err.message);
 
         return res.status(500).json({
             success: false,
