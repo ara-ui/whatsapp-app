@@ -4,7 +4,7 @@ const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 });
 
-const MODEL = "gemini-3.5-flash-lite";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 
 async function generateAIResponse(prompt) {
@@ -39,27 +39,32 @@ async function generateAIResponse(prompt) {
 
 async function generateSmartReplies(
     incomingMessage,
-    recentMessages = []
+    recentMessages = [],
+    replyContext = ""
 ) {
 
     const conversation =
         recentMessages
-            .slice(-8)
+            .slice(-3)
             .join("\n");
 
     const prompt = `
 You are an AI assistant inside a chat application.
 
-Generate exactly 3 short smart replies to the incoming message.
+Generate exactly 4 short smart replies to the incoming message.
 
 Incoming message:
 "${incomingMessage}"
 
-Recent conversation:
+Recent conversation (latest 3 messages):
 ${conversation}
 
+Reply context:
+${replyContext || "None"}
+
 Rules:
-- Exactly 3 replies.
+- Exactly 4 replies.
+- If reply context is provided, make the suggestions directly useful for replying to that message.
 - Keep each reply under 12 words.
 - Natural conversational language.
 - Relevant to the incoming message.
@@ -73,53 +78,6 @@ Rules:
 }
 
 
-// ============================================================
-// PREDICTIVE TYPING
-// ============================================================
-
-async function generatePredictiveSuggestions(
-    text,
-    recentMessages = []
-) {
-
-    if (!text || text.trim().length < 2) {
-        return {
-            suggestions: []
-        };
-    }
-
-    const conversation =
-        recentMessages
-            .slice(-5)
-            .join("\n");
-
-    const prompt = `
-You are an AI predictive typing assistant.
-
-The user is currently typing:
-
-"${text}"
-
-Recent conversation:
-${conversation}
-
-Generate exactly 3 possible short continuations.
-
-Rules:
-- Continue what the user is typing.
-- Do NOT rewrite the entire sentence.
-- Suggestions should be short phrases or words.
-- Maximum 5 words per suggestion.
-- Relevant to the context.
-- Natural conversational language.
-- Do not include explanations.
-`;
-
-    return generateAIResponse(prompt);
-}
-
-
 module.exports = {
-    generateSmartReplies,
-    generatePredictiveSuggestions
+    generateSmartReplies
 };

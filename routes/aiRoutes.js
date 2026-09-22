@@ -3,12 +3,11 @@ const express = require("express");
 const router = express.Router();
 
 const {
-    getSmartReplies,
-    getPredictiveSuggestions
+    getSmartReplies
 } = require("../controller/aiController");
 
 const { authenticate } = require("../middleware/authentication");
-const { smartRepliesLimiter, predictiveLimiter } = require("../middleware/aiRateLimiter");
+const { smartRepliesLimiter } = require("../middleware/aiRateLimiter");
 
 
 router.post(
@@ -16,14 +15,6 @@ router.post(
     authenticate,
     smartRepliesLimiter,
     getSmartReplies
-);
-
-
-router.post(
-    "/predictive",
-    authenticate,
-    predictiveLimiter,
-    getPredictiveSuggestions
 );
 
 

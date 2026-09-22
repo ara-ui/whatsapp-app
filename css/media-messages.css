@@ -1,0 +1,49 @@
+/* ================= MEDIA MESSAGES ================= */
+
+.message-media-image {
+    max-width: 260px;
+    max-height: 260px;
+    border-radius: 8px;
+    display: block;
+    cursor: pointer;
+}
+
+.message-media-video {
+    max-width: 280px;
+    max-height: 280px;
+    border-radius: 8px;
+    display: block;
+}
+
+.message-media-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.04);
+    border-radius: 8px;
+    text-decoration: none;
+    color: #4F46E5;
+    font-size: 14px;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.message-media-file:hover {
+    background: rgba(0, 0, 0, 0.08);
+}
+
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+    .message {
+        max-width: 82%;
+    }
+
+    .chat-window-header-text h2 {
+        font-size: 16px;
+    }
+}
+

@@ -18,6 +18,8 @@ const {
 } = require("../../utils/roomAuthorization");
 const { areUsersConnected } = require("../../utils/connection");
 const RoomMember = require("../../models/RoomMember");
+const ArchivedMessage = require("../../models/ArchivedMessage");
+const { getDeletedMessageIdsForUser } = require("../../utils/messageDeletion");
 
 async function broadcastMessageStatus(io, messageId) {
 
@@ -46,6 +48,30 @@ async function broadcastMessageStatus(io, messageId) {
             status
         }
     );
+}
+
+
+async function getAuthorizedReplyTarget(replyToMessageId, roomId, userId) {
+    if (!replyToMessageId) return null;
+
+    const id = Number.parseInt(replyToMessageId, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+        throw new Error("Invalid reply message");
+    }
+
+    let target = await Message.findByPk(id);
+    if (!target) target = await ArchivedMessage.findByPk(id);
+
+    if (!target || Number(target.roomId) !== Number(roomId)) {
+        throw new Error("Reply target not found in this room");
+    }
+
+    const deletedIds = await getDeletedMessageIdsForUser(userId, [target.id]);
+    if (deletedIds.has(String(target.id))) {
+        throw new Error("You cannot reply to a message you deleted for yourself");
+    }
+
+    return target;
 }
 
 
@@ -165,7 +191,7 @@ const roomHandler = (io, socket) => {
 
         try {
 
-            const { content } = payload || {};
+            const { content, replyToMessageId } = payload || {};
 
             const roomId =
                 parseInt(
@@ -246,6 +272,18 @@ const roomHandler = (io, socket) => {
             }
 
 
+            let replyTarget = null;
+            try {
+                replyTarget = await getAuthorizedReplyTarget(
+                    replyToMessageId,
+                    room.id,
+                    socket.user.userId
+                );
+            } catch (replyError) {
+                socket.emit("room:error", { message: replyError.message });
+                return;
+            }
+
             // Create message
 
             const message =
@@ -255,6 +293,8 @@ const roomHandler = (io, socket) => {
 
                     senderId:
                         socket.user.userId,
+
+                    replyToMessageId: replyTarget ? replyTarget.id : null,
 
                     content:
                         content.trim()
@@ -326,6 +366,10 @@ const roomHandler = (io, socket) => {
                     }
                 );
 
+            const replyTargetSender = replyTarget && Number(replyTarget.senderId) !== Number(socket.user.userId)
+                ? await User.findByPk(replyTarget.senderId, { attributes: ["id", "name"] })
+                : sender;
+
 
             // Broadcast message
 
@@ -364,7 +408,19 @@ const roomHandler = (io, socket) => {
                         message.createdAt,
 
                     status:
-                        initialStatus
+                        initialStatus,
+
+                    replyToMessageId: message.replyToMessageId,
+                    replyToMessage: replyTarget
+                        ? {
+                            id: replyTarget.id,
+                            senderId: replyTarget.senderId,
+                            senderName: replyTargetSender ? replyTargetSender.name : null,
+                            content: replyTarget.content,
+                            messageType: replyTarget.messageType,
+                            fileName: replyTarget.fileName
+                        }
+                        : null
                 }
             );
 

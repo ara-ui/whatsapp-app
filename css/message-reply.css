@@ -1,0 +1,167 @@
+/* Connectly message reply */
+.message-reply-btn {
+    position: absolute;
+    right: -34px;
+    bottom: 4px;
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.96);
+    color: #4F46E5;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 26px;
+    padding: 0;
+    opacity: 0.9;
+    z-index: 2;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Reply icon positioning */
+
+.messages {
+    padding-left: 45px;
+    padding-right: 45px;
+}
+
+.message {
+    position: relative;
+}
+
+.message .message-reply-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 28px;
+    height: 28px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: #f7f4f6;
+    color: #6b7280;
+
+    border: none;
+    border-radius: 50%;
+
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* Incoming message → Reply icon on the RIGHT */
+.message.other .message-reply-btn {
+    right: -38px;
+    left: auto;
+}
+
+/* My/sender message → Reply icon on the LEFT */
+.message.mine .message-reply-btn {
+    left: -38px;
+    right: auto;
+}
+
+/* Extra protection on smaller screens */
+@media (max-width: 600px) {
+    .messages {
+        padding-left: 42px;
+        padding-right: 42px;
+    }
+
+    .message.other .message-reply-btn {
+        right: -34px;
+    }
+
+    .message.mine .message-reply-btn {
+        left: -34px;
+    }
+}
+
+.message-reply-btn:hover {
+    background: #EDE9FE;
+    color: #7C3AED;
+}
+
+.reply-preview {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 0 0 7px;
+    padding: 6px 8px;
+    border: 0;
+    border-left: 3px solid #7C3AED;
+    border-radius: 5px;
+    background: rgba(124, 58, 237, 0.08);
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.reply-preview-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #4F46E5;
+}
+
+.reply-preview-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #555;
+}
+
+.reply-preview-missing {
+    color: #777;
+}
+
+.reply-composer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    background: #F5F3FF;
+    border-top: 1px solid #DDD6FE;
+    border-left: 3px solid #7C3AED;
+}
+
+.reply-composer.hidden {
+    display: none;
+}
+
+.reply-composer-content {
+    min-width: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.reply-composer-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #4F46E5;
+}
+
+.reply-composer-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+    color: #555;
+}
+
+.reply-composer-close {
+    border: 0;
+    background: transparent;
+    color: #555;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+.reply-highlight {
+    outline: 2px solid #A855F7;
+    outline-offset: 2px;
+}

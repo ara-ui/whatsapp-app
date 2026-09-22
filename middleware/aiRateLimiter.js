@@ -16,19 +16,6 @@ const smartRepliesLimiter = rateLimit({
     }
 });
 
-const predictiveLimiter = rateLimit({
-    windowMs: 60 * 1000,
-    limit: Number(process.env.AI_PREDICTIVE_RATE_LIMIT || 30),
-    standardHeaders: "draft-8",
-    legacyHeaders: false,
-    keyGenerator: userKeyGenerator,
-    message: {
-        success: false,
-        message: "Too many AI typing requests. Please try again shortly."
-    }
-});
-
 module.exports = {
-    smartRepliesLimiter,
-    predictiveLimiter
+    smartRepliesLimiter
 };

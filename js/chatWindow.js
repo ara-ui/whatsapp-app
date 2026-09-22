@@ -40,6 +40,9 @@ const attachBtn =
 const mediaFileInput =
     document.getElementById("mediaFileInput");
 
+const replyComposer = document.getElementById("replyComposer");
+let replyingToMessageId = null;
+
 
 // ROOM
 
@@ -101,6 +104,50 @@ function closeCurrentRoom() {
     chatWindowEmptyState.classList.remove("hidden");
     chatWindowPanel.classList.remove("mobile-visible");
     closeChatActionsMenu();
+}
+
+function cancelReply() {
+    replyingToMessageId = null;
+    if (replyComposer) {
+        replyComposer.innerHTML = "";
+        replyComposer.classList.add("hidden");
+    }
+}
+
+function startReplyToMessage(messageId) {
+    const message = typeof findMessageById === "function" ? findMessageById(messageId) : null;
+    if (!message || !replyComposer) return;
+
+    replyingToMessageId = Number(message.id);
+    const preview = message.content || (message.messageType === "image" ? "Photo" : message.messageType === "video" ? "Video" : message.fileName || "File");
+    const sender = Number(message.senderId) === Number(currentUser.userId) ? "yourself" : (message.senderName || "user");
+
+    replyComposer.innerHTML = `
+        <div class="reply-composer-content">
+            <span class="reply-composer-title">↩ Replying to ${escapeHtml(sender)}</span>
+            <span class="reply-composer-text">${escapeHtml(preview)}</span>
+        </div>
+        <button type="button" class="reply-composer-close" aria-label="Cancel reply">×</button>
+    `;
+    replyComposer.classList.remove("hidden");
+    replyComposer.querySelector(".reply-composer-close").addEventListener("click", cancelReply);
+    messageInput.focus();
+
+    if (Number(message.senderId) !== Number(currentUser.userId) && typeof loadSmartReplies === "function") {
+        loadSmartReplies(message.content || preview, message.id, message.roomId, message.content || preview);
+    }
+}
+
+function getReplyToMessageId() {
+    return replyingToMessageId;
+}
+
+function scrollToMessage(messageId) {
+    const element = document.querySelector(`.message[data-message-id="${CSS.escape(String(messageId))}"]`);
+    if (!element) return;
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+    element.classList.add("reply-highlight");
+    window.setTimeout(() => element.classList.remove("reply-highlight"), 1200);
 }
 
 function renderChatActionsMenu() {

@@ -16,6 +16,10 @@ const Message = db.define("Message", {
         type: DataTypes.INTEGER,
         allowNull: false
     },
+    replyToMessageId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
     content: {
         type: DataTypes.STRING(2000),
         // Nullable: media messages carry no text content.

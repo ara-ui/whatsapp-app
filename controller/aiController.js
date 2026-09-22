@@ -1,10 +1,9 @@
 const {
-    generateSmartReplies,
-    generatePredictiveSuggestions
+    generateSmartReplies
 } = require("../services/aiService");
 
 const MAX_MESSAGE_LENGTH = 1000;
-const MAX_RECENT_MESSAGES = 8;
+const MAX_RECENT_MESSAGES = 3;
 const MAX_RECENT_MESSAGE_LENGTH = 1000;
 
 function normalizeRecentMessages(value, maxItems = MAX_RECENT_MESSAGES) {
@@ -33,7 +32,8 @@ exports.getSmartReplies = async (req, res) => {
 
         const {
             message,
-            recentMessages
+            recentMessages,
+            replyContext
         } = req.body;
 
 
@@ -48,7 +48,8 @@ exports.getSmartReplies = async (req, res) => {
         const result =
             await generateSmartReplies(
                 message.trim(),
-                normalizeRecentMessages(recentMessages)
+                normalizeRecentMessages(recentMessages),
+                typeof replyContext === "string" ? replyContext.slice(0, MAX_RECENT_MESSAGE_LENGTH) : ""
             );
 
 
@@ -65,53 +66,3 @@ exports.getSmartReplies = async (req, res) => {
     }
 };
 
-
-// ============================================================
-// PREDICTIVE TYPING
-// ============================================================
-
-exports.getPredictiveSuggestions =
-    async (req, res) => {
-
-        try {
-
-            const {
-                text,
-                recentMessages
-            } = req.body;
-
-
-            if (!text || !text.trim()) {
-
-                return res.status(200).json({
-                    suggestions: []
-                });
-            }
-
-
-            if (!validateMessageInput(text)) {
-                return res.status(400).json({
-                    message: "Text must be between 1 and 1000 characters"
-                });
-            }
-
-            const result =
-                await generatePredictiveSuggestions(
-                    text.trim(),
-                    normalizeRecentMessages(recentMessages, 5)
-                );
-
-
-            return res.status(200).json(result);
-
-
-        } catch (error) {
-
-            console.error("Predictive suggestions controller error:", error.message);
-
-            return res.status(500).json({
-                message:
-                    "Failed to generate predictive suggestions"
-            });
-        }
-    };

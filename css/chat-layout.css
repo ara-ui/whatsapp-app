@@ -1,0 +1,84 @@
+/* =========================================================
+   INPUT AREA
+   ========================================================= */
+
+.chat-input-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================================
+   CHAT WINDOW LAYOUT
+   ============================================================ */
+
+.chat-window-active {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.chat-window-header {
+    flex-shrink: 0;
+}
+
+/* Wrapper around the actual message list */
+#messagesContainer {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+}
+
+/* The ONLY scrolling container */
+.messages {
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 20px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Bottom input area */
+.chat-input {
+    flex-shrink: 0;
+}
+
+#aiSuggestions {
+    flex-shrink: 0;
+}
+
+#chatInput {
+    flex-shrink: 0;
+}
+.load-older-messages {
+    display: block;
+    margin: 10px auto 14px;
+    padding: 8px 14px;
+    border: 1px solid #d0d7de;
+    border-radius: 999px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+    font: inherit;
+}
+
+.load-older-messages:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+
+
+

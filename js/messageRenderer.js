@@ -119,8 +119,21 @@ function createMessageElement(msg) {
            </div>`
         : "";
 
+    const replyPreview = renderReplyPreview(msg);
+    const replyButton = `
+        <button
+            type="button"
+            class="message-reply-btn"
+            title="Reply"
+            aria-label="Reply to this message"
+            data-reply-message-id="${messageId}"
+        >↩</button>
+    `;
+
     div.innerHTML = `
+        ${replyButton}
         ${senderLabel}
+        ${replyPreview}
         ${renderMessageBody(msg)}
         <div class="time">
             <span>${time}</span>
@@ -140,6 +153,35 @@ function createMessageElement(msg) {
     `;
 
     return div;
+}
+
+
+function renderReplyPreview(msg) {
+    if (!msg?.replyToMessageId) return "";
+
+    const original = msg.replyToMessage || findMessageById(msg.replyToMessageId);
+    if (!original) {
+        return `<button type="button" class="reply-preview reply-preview-missing" data-reply-target-id="${escapeHtml(String(msg.replyToMessageId))}">↩ Replied message</button>`;
+    }
+
+    const label = original.senderName || "Message";
+    let preview = original.content || "";
+    if (!preview) {
+        preview = original.messageType === "image"
+            ? "Photo"
+            : original.messageType === "video"
+                ? "Video"
+                : original.messageType === "file"
+                    ? (original.fileName || "File")
+                    : "Message";
+    }
+
+    return `
+        <button type="button" class="reply-preview" data-reply-target-id="${escapeHtml(String(original.id))}">
+            <span class="reply-preview-label">↩ ${escapeHtml(label)}</span>
+            <span class="reply-preview-text">${escapeHtml(preview)}</span>
+        </button>
+    `;
 }
 
 
@@ -304,3 +346,21 @@ function removeRenderedMessage(messageId) {
     renderedMessages.delete(id);
     pendingStatusUpdates.delete(id);
 }
+
+
+document.addEventListener("click", event => {
+    const replyButton = event.target.closest("[data-reply-message-id]");
+    if (replyButton) {
+        event.preventDefault();
+        if (typeof startReplyToMessage === "function") {
+            startReplyToMessage(replyButton.dataset.replyMessageId);
+        }
+        return;
+    }
+
+    const preview = event.target.closest("[data-reply-target-id]");
+    if (preview && typeof scrollToMessage === "function") {
+        event.preventDefault();
+        scrollToMessage(preview.dataset.replyTargetId);
+    }
+});

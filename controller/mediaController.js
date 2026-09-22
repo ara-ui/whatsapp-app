@@ -10,6 +10,7 @@ const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 const s3Client = require("../utils/s3Client");
 const Room = require("../models/Room");
 const Message = require("../models/Message");
+const User = require("../models/User");
 const { getDeletedMessageIdsForUser } = require("../utils/messageDeletion");
 
 const { isAuthorizedForRoom } = require("../utils/roomAuthorization");
@@ -45,6 +46,20 @@ const upload = multer({
         }
     }
 }).single("file");
+
+
+async function getAuthorizedReplyTarget(replyToMessageId, roomId, userId) {
+    if (!replyToMessageId) return null;
+    const id = Number.parseInt(replyToMessageId, 10);
+    if (!Number.isInteger(id) || id <= 0) throw new Error("Invalid reply message");
+
+    let target = await Message.findByPk(id);
+    if (!target) target = await ArchivedMessage.findByPk(id);
+    if (!target || Number(target.roomId) !== Number(roomId)) {
+        throw new Error("Reply target not found in this room");
+    }
+    return target;
+}
 
 
 exports.uploadMedia = (req, res) => {
@@ -120,6 +135,17 @@ exports.uploadMedia = (req, res) => {
                 }
             }
 
+            let replyTarget = null;
+            try {
+                replyTarget = await getAuthorizedReplyTarget(
+                    req.body.replyToMessageId,
+                    room.id,
+                    currentUserId
+                );
+            } catch (replyError) {
+                return res.status(400).json({ success: false, message: replyError.message });
+            }
+
             const messageType = getMessageTypeFromMime(file.mimetype);
             const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
             const s3Key = `media/${roomId}/${crypto.randomUUID()}-${safeName}`;
@@ -153,6 +179,7 @@ exports.uploadMedia = (req, res) => {
             const message = await Message.create({
                 roomId: room.id,
                 senderId: currentUserId,
+                replyToMessageId: replyTarget ? replyTarget.id : null,
                 content: null,
                 messageType,
                 mediaUrl:null,
@@ -207,7 +234,18 @@ exports.uploadMedia = (req, res) => {
                 fileName: message.fileName,
                 mimeType: message.mimeType,
                 createdAt: message.createdAt,
-                status: initialStatus
+                status: initialStatus,
+                replyToMessageId: message.replyToMessageId,
+                replyToMessage: replyTarget
+                    ? {
+                        id: replyTarget.id,
+                        senderId: replyTarget.senderId,
+                        senderName: replyTarget.senderId === currentUserId ? req.user.name : (await User.findByPk(replyTarget.senderId, { attributes: ["name"] }))?.name || "User",
+                        content: replyTarget.content,
+                        messageType: replyTarget.messageType,
+                        fileName: replyTarget.fileName
+                    }
+                    : null
             };
 
             if (io) {

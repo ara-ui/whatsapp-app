@@ -34,6 +34,7 @@ async function archiveOldMessages() {
             id: message.id,
             roomId: message.roomId,
             senderId: message.senderId,
+            replyToMessageId: message.replyToMessageId,
             content: message.content,
             messageType: message.messageType,
             mediaUrl: message.mediaUrl,

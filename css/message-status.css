@@ -1,0 +1,32 @@
+/* ============================================================
+   MESSAGE DELIVERY / READ STATUS
+   ============================================================ */
+
+.message-status {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1;
+}
+
+.status-ticks {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.status-sent {
+    color: #777;
+}
+
+.status-delivered {
+    color: #777;
+}
+
+.status-read {
+    color: #2196f3;
+}
+

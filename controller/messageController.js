@@ -155,6 +155,38 @@ exports.getRoomMessages = async (req, res) => {
 
         const pageMessages = [...messages].reverse();
 
+        const replyIds = [...new Set(
+            messages
+                .map(message => Number(message.replyToMessageId))
+                .filter(Boolean)
+        )];
+
+        const replyPreviewMap = new Map();
+        if (replyIds.length) {
+            const [replyLive, replyArchived] = await Promise.all([
+                Message.findAll({ where: { id: replyIds } }),
+                ArchivedMessage.findAll({ where: { id: replyIds } })
+            ]);
+
+            const replyRows = [...replyArchived, ...replyLive];
+            const senderIds = [...new Set(replyRows.map(row => Number(row.senderId)).filter(Boolean))];
+            const replySenders = senderIds.length
+                ? await User.findAll({ where: { id: senderIds }, attributes: ["id", "name"] })
+                : [];
+            const replySenderNames = new Map(replySenders.map(user => [Number(user.id), user.name]));
+
+            replyRows.forEach(row => {
+                replyPreviewMap.set(String(row.id), {
+                    id: row.id,
+                    senderId: row.senderId,
+                    senderName: replySenderNames.get(Number(row.senderId)) || "User",
+                    content: row.content,
+                    messageType: row.messageType,
+                    fileName: row.fileName
+                });
+            });
+        }
+
         const formatted = await Promise.all(
             pageMessages.map(async (m) => {
                     let mediaUrl = null;
@@ -197,6 +229,10 @@ exports.getRoomMessages = async (req, res) => {
                         fileName: m.fileName,
                         mimeType: m.mimeType,
                         createdAt: m.createdAt,
+                        replyToMessageId: m.replyToMessageId || null,
+                        replyToMessage: m.replyToMessageId
+                            ? (replyPreviewMap.get(String(m.replyToMessageId)) || null)
+                            : null,
                         status
                     };
                 })

@@ -184,9 +184,6 @@ async function initializeApplication() {
             "/js/aiSuggestions.js"
         );
 
-        await loadScript(
-            "/js/wordSuggestions.js"
-        );
 
         console.log(
             "🎉 Connectly initialized successfully"

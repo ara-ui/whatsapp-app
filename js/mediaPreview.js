@@ -145,6 +145,8 @@ async function uploadSelectedFile() {
 
     formData.append("file", file);
     formData.append("roomId", currentRoom.id);
+    const replyId = typeof getReplyToMessageId === "function" ? getReplyToMessageId() : null;
+    if (replyId) formData.append("replyToMessageId", replyId);
 
 
     sendAttachmentBtn.disabled = true;
@@ -182,6 +184,7 @@ async function uploadSelectedFile() {
 
 
         clearPendingAttachment();
+        if (typeof cancelReply === "function") cancelReply();
 
 
     } catch (err) {

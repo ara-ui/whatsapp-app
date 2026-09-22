@@ -17,6 +17,11 @@ const ArchivedMessage = db.define("ArchivedMessage", {
         allowNull: false
     },
 
+    replyToMessageId: {
+        type: DataTypes.INTEGER,
+        allowNull: true
+    },
+
     content: {
         type: DataTypes.STRING(2000),
         allowNull: true

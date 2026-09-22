@@ -1,0 +1,67 @@
+/* ================= MESSAGE CONTEXT MENU ================= */
+.message-context-menu {
+    position: fixed; z-index: 200; min-width: 170px; padding: 5px;
+    background: #fff; border: 1px solid #e2e2e2; border-radius: 10px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.2);
+}
+.message-context-item {
+    display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: 7px;
+    background: transparent; color: #333; text-align: left; font-size: 13px; cursor: pointer;
+}
+.message-context-item:hover { background: #f3f4f5; }
+.message-context-danger:hover { background: #fff1f1; color: #c62828; }
+
+/* Conversation actions */
+.chat-window-actions {
+    margin-left: auto;
+    position: relative;
+}
+
+.chat-actions-btn {
+    font-size: 22px;
+}
+
+.chat-actions-menu {
+    position: absolute;
+    top: 44px;
+    right: 0;
+    min-width: 170px;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(31, 41, 55, 0.18);
+    overflow: hidden;
+    z-index: 50;
+}
+
+.chat-actions-menu.hidden {
+    display: none;
+}
+
+.chat-action-menu-item,
+.chat-action-menu-info {
+    width: 100%;
+    display: block;
+    padding: 12px 14px;
+    border: 0;
+    background: #ffffff;
+    text-align: left;
+    font-size: 14px;
+}
+
+.chat-action-menu-item {
+    cursor: pointer;
+}
+
+.chat-action-menu-item:hover {
+    background: #f5f3ff;
+}
+
+.chat-action-menu-item.danger {
+    color: #c62828;
+}
+
+.chat-action-menu-info {
+    color: #555;
+    line-height: 1.4;
+}
+

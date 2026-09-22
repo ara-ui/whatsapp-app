@@ -243,11 +243,13 @@ function sendCurrentMessage() {
         "room:send",
         {
             roomId: currentRoom.id,
-            content: content
+            content: content,
+            replyToMessageId: typeof getReplyToMessageId === "function" ? getReplyToMessageId() : null
         }
     );
 
     messageInput.value = "";
+    if (typeof cancelReply === "function") cancelReply();
 }
 
 // SOCKET.IO - NEW MESSAGE
