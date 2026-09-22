@@ -247,3 +247,20 @@ test("authentication and socket logs do not expose JWT payloads or user identity
   assert.doesNotMatch(users, /console\.log\("User created successfully:/);
   assert.doesNotMatch(users, /console\.log\("Login successful for user:/);
 });
+
+
+test("development SQL logging is disabled by default and can be enabled explicitly", () => {
+  const db = read("db.js");
+  const env = read(".env.example");
+  assert.match(db, /DEBUG_SQL === ['"]true['"] \? console\.log : false/);
+  assert.match(env, /DEBUG_SQL=false/);
+});
+
+test("word suggestions provide instant local results and throttled AI context", () => {
+  const source = read("js/wordSuggestions.js");
+  assert.match(source, /AI_DEBOUNCE_MS/);
+  assert.match(source, /AI_MIN_INTERVAL_MS/);
+  assert.match(source, /\/ai\/predictive/);
+  assert.match(source, /getRecentMessagesForWordAI/);
+  assert.match(source, /slice\(0, 5\)/);
+});
