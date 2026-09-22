@@ -2,8 +2,8 @@
     <div class="modal connection-modal">
         <div class="connection-modal-header">
             <div>
-                <h3>Connections</h3>
-                <p class="modal-hint">Connect with someone before starting a private chat.</p>
+                <h3>Connections &amp; Invitations</h3>
+                <p class="modal-hint">Connect with someone before starting a private chat, or accept Space invitations.</p>
             </div>
             <button type="button" id="connectionModalCloseBtn" class="modal-close-btn" aria-label="Close">×</button>
         </div>
@@ -18,6 +18,20 @@
         <div class="connection-section">
             <h4>Pending requests</h4>
             <div id="pendingConnections" class="connection-list">
+                <div class="empty-state">Loading…</div>
+            </div>
+        </div>
+
+        <div class="connection-section">
+            <h4>Space invitations</h4>
+            <div id="spaceInvitations" class="connection-list">
+                <div class="empty-state">Loading…</div>
+            </div>
+        </div>
+
+        <div class="connection-section">
+            <h4>Sent Space invitations</h4>
+            <div id="sentSpaceInvitations" class="connection-list">
                 <div class="empty-state">Loading…</div>
             </div>
         </div>

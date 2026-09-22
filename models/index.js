@@ -6,6 +6,8 @@ const MessageRecipient =require("./MessageRecipient");
 const MessageDeletion = require("./MessageDeletion");
 const Connection = require("./Connection");
 const ForgotPassword=require("./ForgotPassword");
+const SpaceInvitation = require("./SpaceInvitation");
+const SpaceDetails = require("./SpaceDetails");
 
 // User <-> Connection. Connections store an ordered user pair so the same
 // relationship cannot be represented by both (A,B) and (B,A).
@@ -14,6 +16,44 @@ User.hasMany(Connection, { foreignKey: "userBId", onDelete: "CASCADE" });
 Connection.belongsTo(User, { foreignKey: "userAId", as: "UserA" });
 Connection.belongsTo(User, { foreignKey: "userBId", as: "UserB" });
 Connection.belongsTo(User, { foreignKey: "requestedById", as: "Requester" });
+
+
+// Room <-> SpaceDetails (one metadata row per Connectly Space)
+Room.hasOne(SpaceDetails, {
+    foreignKey: "roomId",
+    onDelete: "CASCADE"
+});
+SpaceDetails.belongsTo(Room, {
+    foreignKey: "roomId"
+});
+
+// Room <-> SpaceInvitation
+Room.hasMany(SpaceInvitation, {
+    foreignKey: "roomId",
+    onDelete: "CASCADE"
+});
+SpaceInvitation.belongsTo(Room, {
+    foreignKey: "roomId"
+});
+
+User.hasMany(SpaceInvitation, {
+    foreignKey: "inviterId",
+    as: "SentSpaceInvitations",
+    onDelete: "CASCADE"
+});
+SpaceInvitation.belongsTo(User, {
+    foreignKey: "inviterId",
+    as: "Inviter"
+});
+User.hasMany(SpaceInvitation, {
+    foreignKey: "inviteeId",
+    as: "ReceivedSpaceInvitations",
+    onDelete: "CASCADE"
+});
+SpaceInvitation.belongsTo(User, {
+    foreignKey: "inviteeId",
+    as: "Invitee"
+});
 
 // Room <-> RoomMember (one room has many membership rows)
 Room.hasMany(RoomMember, {
@@ -132,5 +172,7 @@ module.exports = {
     MessageRecipient,
     MessageDeletion,
     Connection,
-    ForgotPassword
+    ForgotPassword,
+    SpaceInvitation,
+    SpaceDetails
 };

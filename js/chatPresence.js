@@ -157,7 +157,7 @@ function restoreRoomSubtitle() {
     ) {
 
         chatWindowSubtitle.textContent =
-            "Group chat";
+            "Connectly Space";
 
         return;
     }

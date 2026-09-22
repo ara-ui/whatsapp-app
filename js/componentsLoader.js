@@ -126,7 +126,7 @@ function loadScript(src) {
 async function initializeApplication() {
 
     console.log(
-        "🚀 Initializing ChatApp..."
+        "🚀 Initializing Connectly..."
     );
 
     try {
@@ -189,7 +189,7 @@ async function initializeApplication() {
         );
 
         console.log(
-            "🎉 ChatApp initialized successfully"
+            "🎉 Connectly initialized successfully"
         );
 
          document.dispatchEvent(
@@ -199,7 +199,7 @@ async function initializeApplication() {
     } catch (error) {
 
         console.error(
-            "❌ ChatApp initialization failed:",
+            "❌ Connectly initialization failed:",
             error
         );
     }

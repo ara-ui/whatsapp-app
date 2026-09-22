@@ -6,6 +6,7 @@ const Message = require("../models/Message");
 const User = require("../models/User");
 const MessageRecipient = require("../models/MessageRecipient");
 const { areUsersConnected } = require("../utils/connection");
+const SpaceDetails = require("../models/SpaceDetails");
 
 
 // first time it's needed. There is only ever one of these.
@@ -61,7 +62,7 @@ exports.getRooms = async (req, res) => {
     try {
         const userId = req.user.id;
 
-        // Rooms this user explicitly belongs to (personal + group)
+        // Rooms this user explicitly belongs to (personal + Space)
         const memberships = await RoomMember.findAll({
             where: { userId },
             include: [{ model: Room }]
@@ -148,6 +149,7 @@ exports.getRooms = async (req, res) => {
                     id: room.id,
                     type: room.type,
                     name: displayName,
+                    purpose: room.type === "group" ? ((await SpaceDetails.findOne({ where: { roomId: room.id } }))?.purpose || null) : null,
                     otherUserId,
                     unreadCount,
                     lastMessage: lastMessage ? {
@@ -246,85 +248,3 @@ exports.createOrGetPersonalRoom = async (req, res) => {
 };
 
 
-exports.createGroupRoom = async (req, res) => {
-    try {
-        const currentUserId = req.user.id;
-        const { name, memberEmails } = req.body;
-
-        if (!name || !name.trim()) {
-            return res.status(400).json({
-                success: false,
-                message: "Group name is required"
-            });
-        }
-
-        if (!Array.isArray(memberEmails) || memberEmails.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "At least one member email is required"
-            });
-        }
-
-        // Normalize (trim + lowercase) and dedupe the input list itself
-        const normalizedEmails = [...new Set(
-            memberEmails
-                .map((e) => (e || "").trim().toLowerCase())
-                .filter(Boolean)
-        )];
-
-        if (normalizedEmails.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "At least one valid member email is required"
-            });
-        }
-
-        const members = await User.findAll({
-            where: { email: { [Op.in]: normalizedEmails } }
-        });
-
-        const foundEmails = members.map((u) => u.email.toLowerCase());
-        const invalidEmails = normalizedEmails.filter((e) => !foundEmails.includes(e));
-
-        if (invalidEmails.length > 0) {
-            return res.status(400).json({
-                success: false,
-                message: `These emails are not registered users: ${invalidEmails.join(", ")}`
-            });
-        }
-
-        const room = await Room.create({
-            type: "group",
-            name: name.trim(),
-            createdBy: currentUserId
-        });
-
-        // Set dedupes automatically — creator is always included exactly
-        // once even if they also listed their own email as a member.
-        const memberIds = new Set(members.map((u) => u.id));
-        memberIds.add(currentUserId);
-
-        const memberRows = Array.from(memberIds).map((userId) => ({
-            roomId: room.id,
-            userId
-        }));
-
-        await RoomMember.bulkCreate(memberRows);
-
-        return res.status(201).json({
-            success: true,
-            room: {
-                id: room.id,
-                type: room.type,
-                name: room.name
-            }
-        });
-
-    } catch (err) {
-        console.log(err);
-        return res.status(500).json({
-            success: false,
-            message: "Server Error"
-        });
-    }
-};

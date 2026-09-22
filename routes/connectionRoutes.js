@@ -7,6 +7,7 @@ const {
     acceptRequest,
     rejectRequest,
     disconnectUser,
+    disconnectByUser,
     getConnectedUsers
 } = require("../controller/connectionController");
 const { authenticate } = require("../middleware/authentication");
@@ -18,6 +19,7 @@ router.get("/", getConnectedUsers);
 router.post("/request", sendRequest);
 router.post("/:connectionId/accept", acceptRequest);
 router.post("/:connectionId/reject", rejectRequest);
+router.delete("/user/:userId", disconnectByUser);
 router.delete("/:connectionId", disconnectUser);
 
 module.exports = router;

@@ -287,6 +287,32 @@ exports.disconnectUser = async (req, res) => {
     }
 };
 
+exports.disconnectByUser = async (req, res) => {
+    try {
+        const userId = Number(req.user.id);
+        const otherUserId = Number(req.params.userId);
+        const connection = await Connection.findOne({
+            where: {
+                status: "accepted",
+                [Op.or]: [
+                    { userAId: userId, userBId: otherUserId },
+                    { userAId: otherUserId, userBId: userId }
+                ]
+            }
+        });
+
+        if (!connection) {
+            return res.status(404).json({ success: false, message: "Connected relationship not found" });
+        }
+
+        req.params.connectionId = connection.id;
+        return exports.disconnectUser(req, res);
+    } catch (err) {
+        console.error("Disconnect by user error:", err.message);
+        return res.status(500).json({ success: false, message: "Server Error" });
+    }
+};
+
 exports.getConnectedUsers = async (req, res) => {
     try {
         const userId = Number(req.user.id);

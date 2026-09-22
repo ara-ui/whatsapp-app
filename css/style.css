@@ -13,7 +13,7 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
-    background:linear-gradient(135deg,#075E54,#128C7E,#25D366);
+    background:linear-gradient(135deg,#4F46E5,#7C3AED,#A855F7);
     padding:20px;
 }
 
@@ -32,7 +32,7 @@ body{
 
 .card h1{
     text-align:center;
-    color:#075E54;
+    color:#4F46E5;
     font-size:30px;
     margin-bottom:8px;
 }
@@ -60,7 +60,7 @@ form input{
 }
 
 form input:focus{
-    border-color:#25D366;
+    border-color:#A855F7;
     box-shadow:0 0 8px rgba(37,211,102,.25);
 }
 
@@ -69,7 +69,7 @@ button{
     padding:14px;
     border:none;
     border-radius:10px;
-    background:#25D366;
+    background:#A855F7;
     color:white;
     font-size:16px;
     font-weight:600;
@@ -78,7 +78,7 @@ button{
 }
 
 button:hover{
-    background:#1EBE5B;
+    background:#4338CA;
     transform:translateY(-2px);
 }
 
@@ -87,7 +87,7 @@ button:active{
 }
 
 a{
-    color:#128C7E;
+    color:#7C3AED;
     text-decoration:none;
     font-weight:600;
 }

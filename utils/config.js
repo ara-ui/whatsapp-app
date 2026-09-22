@@ -1,5 +1,15 @@
 const DEFAULT_JWT_EXPIRES_IN = "1d";
 
+function getAppUrl() {
+    const appUrl = (process.env.APP_URL || "").trim().replace(/\/$/, "");
+
+    if (!appUrl) {
+        throw new Error("APP_URL must be configured");
+    }
+
+    return appUrl;
+}
+
 function getAllowedOrigins() {
     const configured = (process.env.CORS_ORIGINS || "")
         .split(",")
@@ -10,11 +20,7 @@ function getAllowedOrigins() {
         return configured;
     }
 
-    if (process.env.APP_URL) {
-        return [process.env.APP_URL.replace(/\/$/, "")];
-    }
-
-    return ["http://localhost:3000"];
+    return [getAppUrl()];
 }
 
 function getJwtExpiresIn() {
@@ -22,6 +28,8 @@ function getJwtExpiresIn() {
 }
 
 function validateSecurityConfig() {
+    getAppUrl();
+
     if (!process.env.JWT_SECRET || process.env.JWT_SECRET === "replace_with_a_long_random_secret") {
         throw new Error("JWT_SECRET must be configured with a non-default secret");
     }
@@ -33,6 +41,7 @@ function validateSecurityConfig() {
 
 module.exports = {
     getAllowedOrigins,
+    getAppUrl,
     getJwtExpiresIn,
     validateSecurityConfig
 };

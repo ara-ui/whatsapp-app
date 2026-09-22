@@ -1,26 +1,21 @@
 <div class="chat-window-header">
 
-    <button
-        id="backBtn"
-        class="icon-btn back-btn"
-        title="Back">
-        ←
-    </button>
+    <button id="backBtn" class="icon-btn back-btn" title="Back">←</button>
 
-    <div
-        class="chat-window-avatar"
-        id="chatWindowAvatar">
-        💬
-    </div>
+    <div class="chat-window-avatar" id="chatWindowAvatar">💬</div>
 
     <div class="chat-window-header-text">
-
-        <h2 id="chatWindowTitle">
-            Conversation
-        </h2>
-
+        <h2 id="chatWindowTitle">Conversation</h2>
         <p id="chatWindowSubtitle"></p>
+    </div>
 
+    <div class="chat-window-actions">
+        <button
+            id="chatWindowActionsBtn"
+            class="icon-btn chat-actions-btn"
+            title="Conversation options"
+            aria-label="Conversation options">⋮</button>
+        <div id="chatWindowActionsMenu" class="chat-actions-menu hidden"></div>
     </div>
 
 </div>

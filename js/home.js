@@ -13,8 +13,12 @@ const logoutBtn = document.getElementById("logoutBtn");
 const createGroupModal = document.getElementById("createGroupModal");
 const groupNameInput = document.getElementById("groupNameInput");
 const groupMembersInput = document.getElementById("groupMembersInput");
+const groupPurposeInput = document.getElementById("groupPurposeInput");
 const createGroupSubmitBtn = document.getElementById("createGroupSubmitBtn");
 const createGroupCancelBtn = document.getElementById("createGroupCancelBtn");
+const createGroupCancelBtnSecondary = document.getElementById("createGroupCancelBtnSecondary");
+const spaceConnectedMembers = document.getElementById("spaceConnectedMembers");
+const spaceCreateFeedback = document.getElementById("spaceCreateFeedback");
 
 let allRooms = [];
 
@@ -24,7 +28,7 @@ let allRooms = [];
 
 function roomIcon(type) {
     if (type === "personal") return "👤";
-    if (type === "group") return "👥";
+    if (type === "group") return "✦";
     return "🌍";
 }
 
@@ -145,61 +149,107 @@ newChatBtn.addEventListener("click", () => {
 });
 
 // ---------------------------------------------------------
-// Create group
+// Create Connectly Space
 // ---------------------------------------------------------
 
-newGroupBtn.addEventListener("click", () => {
+async function loadSpaceConnectedMembers() {
+    if (!spaceConnectedMembers) return;
+    spaceConnectedMembers.innerHTML = `<div class="empty-state">Loading connections…</div>`;
+
+    try {
+        const response = await axios.get(`${BASE_URL}/connections`, {
+            headers: { Authorization: token }
+        });
+        const users = response.data.users || [];
+
+        if (!users.length) {
+            spaceConnectedMembers.innerHTML = `<div class="empty-state">No connections yet. Use email invitations below.</div>`;
+            return;
+        }
+
+        spaceConnectedMembers.innerHTML = users.map(connection => `
+            <label class="space-member-option">
+                <input type="checkbox" value="${connection.user.id}" data-email="${escapeHtml(connection.user.email)}">
+                <span class="space-member-avatar">👤</span>
+                <span class="space-member-copy">
+                    <strong>${escapeHtml(connection.user.name)}</strong>
+                    <small>${escapeHtml(connection.user.email)}</small>
+                </span>
+            </label>
+        `).join("");
+    } catch (err) {
+        spaceConnectedMembers.innerHTML = `<div class="empty-state error">Couldn't load connections.</div>`;
+    }
+}
+
+newGroupBtn.addEventListener("click", async () => {
     groupNameInput.value = "";
     groupMembersInput.value = "";
+    if (groupPurposeInput) groupPurposeInput.value = "";
+    if (spaceCreateFeedback) spaceCreateFeedback.classList.add("hidden");
     createGroupModal.classList.remove("hidden");
+    await loadSpaceConnectedMembers();
     groupNameInput.focus();
 });
 
-createGroupCancelBtn.addEventListener("click", () => {
+function closeSpaceModal() {
     createGroupModal.classList.add("hidden");
-});
+}
+
+createGroupCancelBtn.addEventListener("click", closeSpaceModal);
+createGroupCancelBtnSecondary.addEventListener("click", closeSpaceModal);
 
 createGroupSubmitBtn.addEventListener("click", async () => {
     const name = groupNameInput.value.trim();
-    const emailsRaw = groupMembersInput.value.trim();
+    const purpose = groupPurposeInput ? groupPurposeInput.value.trim() : "";
+    const memberEmails = groupMembersInput.value
+        .split(",")
+        .map(value => value.trim().toLowerCase())
+        .filter(Boolean);
+    const memberUserIds = [...spaceConnectedMembers.querySelectorAll("input[type='checkbox']:checked")]
+        .map(input => Number(input.value))
+        .filter(Boolean);
 
     if (!name) {
-        alert("Please enter a group name");
+        alert("Please enter a Space name");
         return;
     }
 
-    if (!emailsRaw) {
-        alert("Please enter at least one member email");
+    if (!memberEmails.length && !memberUserIds.length) {
+        alert("Select at least one connected person or enter an email address.");
         return;
     }
 
-    const memberEmails = emailsRaw
-        .split(",")
-        .map((e) => e.trim())
-        .filter(Boolean);
+    createGroupSubmitBtn.disabled = true;
+    createGroupSubmitBtn.textContent = "Creating…";
 
     try {
         const response = await axios.post(
-            `${BASE_URL}/rooms/group`,
-            { name, memberEmails },
+            `${BASE_URL}/rooms/spaces`,
+            { name, purpose, memberUserIds, memberEmails },
             { headers: { Authorization: token } }
         );
 
-        createGroupModal.classList.add("hidden");
-
+        closeSpaceModal();
         const room = response.data.room;
-
         await loadRooms();
         openRoom(room);
 
-    } catch (err) {
-        console.log(err);
-
-        if (err.response && err.response.data && err.response.data.message) {
-            alert(err.response.data.message);
-        } else {
-            alert("Something went wrong");
+        if (typeof showConnectionToast === "function") {
+            showConnectionToast(response.data.message || "Space created and invitations sent.");
         }
+    } catch (err) {
+        const message = err.response?.data?.message || "Couldn't create the Space.";
+        if (spaceCreateFeedback) {
+            spaceCreateFeedback.textContent = message;
+            spaceCreateFeedback.classList.remove("hidden", "success", "error");
+            spaceCreateFeedback.classList.add("error");
+        } else {
+            alert(message);
+        }
+    } finally {
+        createGroupSubmitBtn.disabled = false;
+        createGroupSubmitBtn.textContent = "Create Space & Invite";
     }
 });
 

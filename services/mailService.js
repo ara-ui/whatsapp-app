@@ -1,4 +1,5 @@
 const SibApiV3Sdk = require("sib-api-v3-sdk");
+const { getAppUrl } = require("../utils/config");
 
 // Initialize Brevo client
 const client = SibApiV3Sdk.ApiClient.instance;
@@ -12,11 +13,7 @@ const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const sendMail = async (receiverEmail, id) => {
     try {
-        const appUrl = process.env.APP_URL;
-
-        if (!appUrl) {
-            throw new Error("APP_URL is not configured");
-        }
+        const appUrl = getAppUrl();
 
         const response = await tranEmailApi.sendTransacEmail({
 
@@ -49,13 +46,7 @@ const sendMail = async (receiverEmail, id) => {
 
     } catch (err) {
 
-        console.log("BREVO ERROR:");
-
-        // Print the full error
-        console.log(err);
-
-        // Print Brevo response if available
-        console.log(err.response?.body);
+        console.error("Brevo email sending failed:", err.message);
 
         throw err;   // Let the controller know the mail failed
     }
