@@ -19,7 +19,7 @@ const sendMail = async (receiverEmail, id) => {
 
             sender: {
                 email: "zurikara9@gmail.com",
-                name: "Chat application"
+                name: "Connectly"
             },
 
             to: [
@@ -31,7 +31,7 @@ const sendMail = async (receiverEmail, id) => {
             subject: "Reset Your Password",
 
             htmlContent: `
-                <h2>Chat application</h2>
+                <h2>Connectly</h2>
                 <p>Click the button below to reset your password.</p>
 
                 <a href="${appUrl}/password/resetpassword/${id}">

@@ -27,8 +27,6 @@ async function login(event){
 
         alert("Login Successful");
 
-        console.log(response.data);
-
         localStorage.setItem(
 
             "token",
