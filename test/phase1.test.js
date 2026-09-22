@@ -108,10 +108,15 @@ test("delete-for-everyone broadcasts a room deletion event", () => {
   assert.match(frontend, /removeRenderedMessage\(messageId\)/);
 });
 
-test("delete-for-everyone is offered only for messages owned by the current user", () => {
+test("message delete actions are available from the context menu", () => {
   const renderer = read("js/messageRenderer.js");
-  assert.match(renderer, /isMine\s*\n?\s*\? `[^`]*data-delete-everyone-message-id/s);
-  assert.match(renderer, /Delete for everyone/);
+  const chatWindow = read("js/chatWindow.js");
+  assert.doesNotMatch(renderer, /data-delete-message-id/);
+  assert.doesNotMatch(renderer, /Delete for everyone/);
+  assert.match(chatWindow, /contextmenu/);
+  assert.match(chatWindow, /Delete for me/);
+  assert.match(chatWindow, /Delete for everyone/);
+  assert.match(chatWindow, /isMine/);
 });
 
 test("connection model stores one normalized relationship with request status", () => {
@@ -152,12 +157,17 @@ test("text and media personal messaging enforce connection state", () => {
   assert.match(media, /must be connected to this user to send messages/);
 });
 
-test("connection UI supports pending requests and connected users", () => {
+test("connection UI supports pending requests, badge, toast, and connected users", () => {
   const component = read("public/components/connectionModal.html");
+  const header = read("public/components/sidebarHeader.html");
   const script = read("js/connections.js");
   assert.match(component, /Pending requests/);
   assert.match(component, /Connected users/);
+  assert.match(header, /connectionRequestBadge/);
+  assert.match(header, /connectionToastContainer/);
   assert.match(script, /connection:request/);
+  assert.match(script, /showConnectionToast/);
+  assert.match(script, /setConnectionRequestBadge/);
   assert.match(script, /connection:accepted/);
   assert.match(script, /accept/);
   assert.match(script, /reject/);

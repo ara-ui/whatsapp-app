@@ -760,17 +760,17 @@
 }
 
 
-.message-delete-btn {
-    border: 0;
-    background: transparent;
-    padding: 0;
-    margin-left: 8px;
-    font-size: 11px;
-    cursor: pointer;
-    opacity: 0.7;
-}
 
-.message-delete-btn:hover {
-    opacity: 1;
-    text-decoration: underline;
+
+/* ================= MESSAGE CONTEXT MENU ================= */
+.message-context-menu {
+    position: fixed; z-index: 200; min-width: 170px; padding: 5px;
+    background: #fff; border: 1px solid #e2e2e2; border-radius: 10px;
+    box-shadow: 0 8px 26px rgba(0,0,0,.2);
 }
+.message-context-item {
+    display: block; width: 100%; padding: 10px 12px; border: 0; border-radius: 7px;
+    background: transparent; color: #333; text-align: left; font-size: 13px; cursor: pointer;
+}
+.message-context-item:hover { background: #f3f4f5; }
+.message-context-danger:hover { background: #fff1f1; color: #c62828; }

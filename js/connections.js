@@ -5,11 +5,32 @@ const sendConnectionRequestBtn = document.getElementById("sendConnectionRequestB
 const pendingConnections = document.getElementById("pendingConnections");
 const connectedUsers = document.getElementById("connectedUsers");
 const connectionFeedback = document.getElementById("connectionFeedback");
+const connectionRequestBadge = document.getElementById("connectionRequestBadge");
+const connectionToastContainer = document.getElementById("connectionToastContainer");
 
 function showConnectionFeedback(message, isError = false) {
     connectionFeedback.textContent = message;
     connectionFeedback.classList.remove("hidden", "success", "error");
     connectionFeedback.classList.add(isError ? "error" : "success");
+}
+
+function showConnectionToast(message) {
+    if (!connectionToastContainer) return;
+    const toast = document.createElement("div");
+    toast.className = "connection-toast";
+    toast.textContent = message;
+    connectionToastContainer.appendChild(toast);
+    window.setTimeout(() => {
+        toast.classList.add("is-hiding");
+        window.setTimeout(() => toast.remove(), 180);
+    }, 3500);
+}
+
+function setConnectionRequestBadge(count) {
+    if (!connectionRequestBadge) return;
+    const safeCount = Math.max(0, Number(count) || 0);
+    connectionRequestBadge.textContent = safeCount > 99 ? "99+" : String(safeCount);
+    connectionRequestBadge.classList.toggle("hidden", safeCount === 0);
 }
 
 function openConnectionsModal() {
@@ -36,7 +57,10 @@ async function loadConnectionData() {
             })
         ]);
 
-        renderPendingConnections(pendingResponse.data.requests || []);
+        const requests = pendingResponse.data.requests || [];
+        const incomingCount = requests.filter(request => request.direction === "incoming").length;
+        setConnectionRequestBadge(incomingCount);
+        renderPendingConnections(requests);
         renderConnectedUsers(connectedResponse.data.users || []);
     } catch (err) {
         pendingConnections.innerHTML = `<div class="empty-state error">Couldn't load connection data.</div>`;
@@ -229,33 +253,31 @@ connectionModal.addEventListener("click", event => {
 
 document.addEventListener("chatOpenConnections", openConnectionsModal);
 
-socket.on("connection:request", () => {
-    if (!connectionModal.classList.contains("hidden")) {
-        loadConnectionData();
+socket.on("connection:request", payload => {
+    if (connectionModal.classList.contains("hidden")) {
+        const requesterName = payload?.requester?.name || "Someone";
+        showConnectionToast(`${requesterName} sent you a connection request.`);
     }
+    loadConnectionData();
 });
 
 socket.on("connection:accepted", () => {
-    if (!connectionModal.classList.contains("hidden")) {
-        loadConnectionData();
-    }
+    loadConnectionData();
     if (typeof loadRooms === "function") {
         loadRooms();
     }
 });
 
 socket.on("connection:rejected", () => {
-    if (!connectionModal.classList.contains("hidden")) {
-        loadConnectionData();
-    }
+    loadConnectionData();
 });
 
 
 socket.on("connection:disconnected", () => {
-    if (!connectionModal.classList.contains("hidden")) {
-        loadConnectionData();
-    }
+    loadConnectionData();
     if (typeof loadRooms === "function") {
         loadRooms();
     }
 });
+
+loadConnectionData();

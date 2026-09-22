@@ -634,3 +634,25 @@ body {
         flex-direction: column;
     }
 }
+
+
+/* ================= CONNECTION REQUEST NOTIFICATIONS ================= */
+.connection-icon-btn { position: relative; }
+.connection-request-badge {
+    position: absolute; top: 0; right: 0; min-width: 17px; height: 17px;
+    padding: 0 4px; border-radius: 9px; background: #e53935; color: #fff;
+    font-size: 10px; font-weight: 700; line-height: 17px; text-align: center;
+    border: 2px solid #075E54;
+}
+.connection-toast-container {
+    position: fixed; top: 16px; right: 18px; z-index: 100; display: flex;
+    flex-direction: column; gap: 8px; pointer-events: none;
+}
+.connection-toast {
+    max-width: min(340px, calc(100vw - 32px)); padding: 11px 15px; border-radius: 10px;
+    background: #fff; color: #222; box-shadow: 0 6px 22px rgba(0,0,0,.18);
+    border-left: 4px solid #25D366; font-size: 13px; animation: connectionToastIn .2s ease-out;
+    transition: opacity .18s ease, transform .18s ease;
+}
+.connection-toast.is-hiding { opacity: 0; transform: translateY(-6px); }
+@keyframes connectionToastIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }

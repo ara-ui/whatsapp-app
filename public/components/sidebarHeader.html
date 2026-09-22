@@ -6,9 +6,11 @@
 
         <button
             id="newChatBtn"
-            class="icon-btn"
-            title="Connections">
+            class="icon-btn connection-icon-btn"
+            title="Connections"
+            aria-label="Connections">
             👥
+            <span id="connectionRequestBadge" class="connection-request-badge hidden">0</span>
         </button>
 
         <button
@@ -42,5 +44,7 @@
         </div>
 
     </div>
+
+    <div id="connectionToastContainer" class="connection-toast-container" aria-live="polite" aria-atomic="true"></div>
 
 </div>
