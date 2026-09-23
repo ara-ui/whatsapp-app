@@ -1,6 +1,6 @@
 # Connectly
 
-Connectly is a WhatsApp-style real-time chat application built with Node.js, Express, Socket.IO, MySQL/Sequelize, and a plain HTML/CSS/JavaScript frontend.
+Connectly is a WhatsApp-style real-time chat application built with Node.js, Express, Socket.IO, PostgreSQL/Sequelize and a plain HTML/CSS/JavaScript frontend.
 
 The project focuses on real-time communication, private messaging, connections, Spaces, media sharing, message management, notifications, replies, and AI-assisted smart replies.
 
@@ -99,7 +99,7 @@ Connectly includes a lightweight group/workspace-style feature called **Spaces**
 - Express.js
 - Socket.IO
 - Sequelize
-- MySQL
+- PostgreSQL
 - JWT
 - bcrypt
 - Nodemailer/Brevo email integration
@@ -112,6 +112,7 @@ Connectly includes a lightweight group/workspace-style feature called **Spaces**
 - Socket.IO client
 
 ### Cloud / External Services
+- Neon PostgreSQL for database hosting
 - AWS S3 for private media storage
 - Brevo for password-reset email delivery
 - Google Gemini for AI smart replies
@@ -172,7 +173,8 @@ The CSS is separated by feature/responsibility instead of keeping the entire cha
 
 ```bash
 git clone <your-repository-url>
-cd whatsapp-chat-app
+cd connectly
+
 ```
 
 ### 2. Install dependencies
@@ -187,7 +189,7 @@ Create a `.env` file based on `.env.example`.
 
 The project uses environment variables for configuration such as:
 
-- Database connection
+- PostgreSQL database connection
 - JWT configuration
 - Application URL
 - CORS configuration
@@ -357,15 +359,6 @@ Predictive typing was intentionally removed. Smart replies are a separate, contr
 
 A `.env.example` file is included to document the expected configuration.
 
-Do not upload:
-
-```text
-.env
-```
-
-to GitHub.
-
-If credentials have ever been exposed publicly, rotate them immediately.
 
 ---
 
@@ -374,6 +367,12 @@ If credentials have ever been exposed publicly, rotate them immediately.
 Connectly currently contains the major chat, connection, Space, media, reply, notification, and AI smart-reply features required for its demo build.
 
 The project has been verified through automated regression tests and static checks before the current Git checkpoint.
+
+The project was migrated from MySQL to PostgreSQL using Sequelize
+while preserving the existing application data.
+
+The migration was verified by comparing source and target database
+row counts across all migrated tables.
 
 ---
 
@@ -398,4 +397,5 @@ Mehnaz Ara Islam
 
 B.Tech in Computer Engineering
 
-Connectly was developed as a portfolio project to demonstrate practical backend, real-time communication, authentication, database, cloud storage, and frontend development skills.
+Connectly was developed as a portfolio project to demonstrate practical backend, real-time communication, authentication, database,
+cloud storage, AI integration, and frontend development skills.
